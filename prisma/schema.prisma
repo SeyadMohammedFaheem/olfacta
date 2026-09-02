@@ -1,0 +1,452 @@
+// Olfacta — Professional Perfume Formulation & Compliance SaaS
+// Database Schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─── Identity & Organization ────────────────────────────────────────
+
+model User {
+  id             String   @id @default(cuid())
+  email          String   @unique
+  name           String
+  passwordHash   String
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  memberships    OrganizationMember[]
+  auditLogs      AuditLog[]
+  notifications  Notification[]
+
+  // Formula ownership
+  formulasCreated   Formula[]        @relation("FormulaCreator")
+  versionsCreated   FormulaVersion[] @relation("VersionCreator")
+  versionsApproved  FormulaVersion[] @relation("VersionApprover")
+  versionsReviewed  FormulaVersion[] @relation("VersionReviewer")
+  batchesCreated    Batch[]          @relation("BatchCreator")
+  batchesCompleted  Batch[]          @relation("BatchCompleter")
+
+  @@index([email])
+}
+
+model Organization {
+  id        String   @id @default(cuid())
+  name      String
+  slug      String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  members             OrganizationMember[]
+  formulas            Formula[]
+  ingredients         Ingredient[]
+  suppliers           Supplier[]
+  batches             Batch[]
+  regulatoryRules     RegulatoryRule[]
+  regulatoryProfiles  RegulatoryProfile[]
+  regulatorySources   RegulatorySource[]
+  auditLogs           AuditLog[]
+  notifications       Notification[]
+
+  @@index([slug])
+}
+
+model OrganizationMember {
+  id             String       @id @default(cuid())
+  userId         String
+  organizationId String
+  role           String       @default("VIEWER")
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, organizationId])
+  @@index([organizationId])
+  @@index([userId])
+}
+
+// ─── Ingredients & Suppliers ────────────────────────────────────────
+
+model Ingredient {
+  id             String           @id @default(cuid())
+  organizationId String
+  name           String
+  casNumber      String?
+  inciName       String?
+  materialType   String           @default("FRAGRANCE")
+  description        String?
+  density            Float?
+  dilutionPercentage Float?           @default(100)
+  diluentSolvent     String?          @default("None (Pure)")
+  compositionBreakdown String?
+  costPerUnit        Float?
+  costCurrency       String?          @default("USD")
+  costUnit           String?          @default("g")
+  status             String           @default("ACTIVE")
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+
+  organization        Organization         @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  ingredientSuppliers IngredientSupplier[]
+  formulaIngredients  FormulaIngredient[]
+  batchIngredients    BatchIngredient[]
+  regulatoryRules     RegulatoryRule[]
+  complianceFindings  ComplianceFinding[]
+
+  @@index([organizationId])
+  @@index([casNumber])
+  @@index([name])
+  @@index([materialType])
+  @@index([status])
+}
+
+model Supplier {
+  id             String   @id @default(cuid())
+  organizationId String
+  name           String
+  contactName    String?
+  email          String?
+  phone          String?
+  website        String?
+  notes          String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  organization        Organization         @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  ingredientSuppliers  IngredientSupplier[]
+
+  @@index([organizationId])
+}
+
+model IngredientSupplier {
+  id           String  @id @default(cuid())
+  ingredientId String
+  supplierId   String
+  supplierSku  String?
+  isPreferred  Boolean @default(false)
+
+  ingredient Ingredient @relation(fields: [ingredientId], references: [id], onDelete: Cascade)
+  supplier   Supplier   @relation(fields: [supplierId], references: [id], onDelete: Cascade)
+
+  @@unique([ingredientId, supplierId])
+  @@index([ingredientId])
+  @@index([supplierId])
+}
+
+// ─── Formulas ───────────────────────────────────────────────────────
+
+model Formula {
+  id                  String        @id @default(cuid())
+  organizationId      String
+  name                String
+  description         String?
+  productType         String        @default("EAU_DE_PARFUM")
+  applicationCategory String?       @default("Fine Fragrance")
+  market              String?       @default("General")
+  status              String        @default("DRAFT")
+  createdById         String
+  createdAt           DateTime      @default(now())
+  updatedAt           DateTime      @updatedAt
+
+  organization        Organization        @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  createdBy           User                @relation("FormulaCreator", fields: [createdById], references: [id])
+  versions            FormulaVersion[]
+  batches             Batch[]
+  complianceFindings  ComplianceFinding[]
+
+  @@index([organizationId])
+  @@index([status])
+  @@index([createdById])
+  @@index([createdAt])
+  @@index([updatedAt])
+}
+
+model FormulaVersion {
+  id               String        @id @default(cuid())
+  formulaId        String
+  versionNumber    Int
+  targetWeight     Float         @default(1000)
+  weightUnit       String        @default("g")
+  concentration    Float         @default(20)
+  totalWeight      Float?
+  totalPercentage  Float?
+  status           String        @default("DRAFT")
+  notes            String?
+  createdById      String
+  approvedById     String?
+  approvedAt       DateTime?
+  reviewedById     String?
+  reviewedAt       DateTime?
+  reviewNotes      String?
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+
+  formula             Formula             @relation(fields: [formulaId], references: [id], onDelete: Cascade)
+  createdBy           User                @relation("VersionCreator", fields: [createdById], references: [id])
+  approvedBy          User?               @relation("VersionApprover", fields: [approvedById], references: [id])
+  reviewedBy          User?               @relation("VersionReviewer", fields: [reviewedById], references: [id])
+  ingredients         FormulaIngredient[]
+  batches             Batch[]
+  complianceFindings  ComplianceFinding[]
+  complianceSnapshots ComplianceSnapshot[]
+
+  @@unique([formulaId, versionNumber])
+  @@index([formulaId])
+  @@index([status])
+  @@index([createdAt])
+}
+
+model FormulaIngredient {
+  id                 String  @id @default(cuid())
+  formulaVersionId   String
+  ingredientId       String
+  quantity           Float
+  unit               String  @default("g")
+  percentage         Float?
+  dilutionPercentage Float?  @default(100)
+  diluentSolvent     String?
+  sortOrder          Int     @default(0)
+  notes              String?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  formulaVersion FormulaVersion @relation(fields: [formulaVersionId], references: [id], onDelete: Cascade)
+  ingredient     Ingredient     @relation(fields: [ingredientId], references: [id])
+
+  @@index([formulaVersionId])
+  @@index([ingredientId])
+}
+
+// ─── Compliance & Regulatory ────────────────────────────────────────
+
+model RegulatorySource {
+  id             String   @id @default(cuid())
+  organizationId String
+  name           String
+  description    String?
+  url            String?
+  version        String?
+  publishedAt    DateTime?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  organization Organization     @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  rules        RegulatoryRule[]
+
+  @@index([organizationId])
+}
+
+model RegulatoryProfile {
+  id             String     @id @default(cuid())
+  organizationId String
+  name           String
+  market         String?
+  standard       String?
+  version        String?
+  description    String?
+  isActive       Boolean    @default(true)
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId])
+  @@index([isActive])
+}
+
+model RegulatoryRule {
+  id                  String      @id @default(cuid())
+  organizationId      String
+  ingredientId        String?
+  productCategory     String?
+  applicationArea     String?
+  market              String?
+  standard            String?
+  ruleType            String
+  limitValue          Float?
+  unit                String?     @default("%")
+  severity            String      @default("VIOLATION")
+  warnAtPercentage    Float?      // Warn when reaching this % of limit
+  message             String?
+  isDemo              Boolean     @default(false)
+  sourceId            String?
+  sourceVersion       String?
+  effectiveFrom       DateTime?
+  effectiveTo         DateTime?
+  status              String      @default("ACTIVE")
+  createdAt           DateTime    @default(now())
+  updatedAt           DateTime    @updatedAt
+
+  organization       Organization      @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  ingredient         Ingredient?       @relation(fields: [ingredientId], references: [id])
+  source             RegulatorySource? @relation(fields: [sourceId], references: [id])
+  complianceFindings ComplianceFinding[]
+
+  @@index([organizationId])
+  @@index([ingredientId])
+  @@index([ruleType])
+  @@index([status])
+  @@index([market])
+  @@index([productCategory])
+}
+
+model ComplianceFinding {
+  id               String   @id @default(cuid())
+  formulaId        String
+  formulaVersionId String
+  ingredientId     String?
+  ruleId           String?
+  severity         String
+  status           String   @default("OPEN")
+  currentValue     Float?
+  limitValue       Float?
+  unit             String?  @default("%")
+  message          String
+  source           String?
+  sourceVersion    String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  formula        Formula         @relation(fields: [formulaId], references: [id], onDelete: Cascade)
+  formulaVersion FormulaVersion  @relation(fields: [formulaVersionId], references: [id], onDelete: Cascade)
+  ingredient     Ingredient?     @relation(fields: [ingredientId], references: [id])
+  rule           RegulatoryRule? @relation(fields: [ruleId], references: [id])
+
+  @@index([formulaId])
+  @@index([formulaVersionId])
+  @@index([severity])
+  @@index([status])
+}
+
+model ComplianceSnapshot {
+  id               String   @id @default(cuid())
+  formulaVersionId String
+  profileId        String?
+  findings         String   // JSON string of findings
+  ruleVersions     String   // JSON string of rule versions
+  validatedAt      DateTime @default(now())
+  validatedById    String?
+
+  formulaVersion FormulaVersion @relation(fields: [formulaVersionId], references: [id], onDelete: Cascade)
+
+  @@index([formulaVersionId])
+}
+
+// ─── Production & Batches ───────────────────────────────────────────
+
+model Batch {
+  id               String      @id @default(cuid())
+  organizationId   String
+  formulaId        String
+  formulaVersionId String
+  batchNumber      String
+  targetQuantity   Float
+  actualQuantity   Float?
+  unit             String      @default("g")
+  scaleFactor      Float
+  status           String      @default("PLANNED")
+  notes            String?
+  createdById      String
+  completedById    String?
+  completedAt      DateTime?
+  createdAt        DateTime    @default(now())
+  updatedAt        DateTime    @updatedAt
+
+  organization   Organization      @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  formula        Formula           @relation(fields: [formulaId], references: [id])
+  formulaVersion FormulaVersion    @relation(fields: [formulaVersionId], references: [id])
+  createdBy      User              @relation("BatchCreator", fields: [createdById], references: [id])
+  completedBy    User?             @relation("BatchCompleter", fields: [completedById], references: [id])
+  ingredients    BatchIngredient[]
+
+  @@index([organizationId])
+  @@index([formulaId])
+  @@index([status])
+  @@index([batchNumber])
+  @@index([createdAt])
+}
+
+model BatchIngredient {
+  id             String  @id @default(cuid())
+  batchId        String
+  ingredientId   String
+  targetQuantity Float
+  actualQuantity Float?
+  unit           String  @default("g")
+  difference     Float?
+  notes          String?
+
+  batch      Batch      @relation(fields: [batchId], references: [id], onDelete: Cascade)
+  ingredient Ingredient @relation(fields: [ingredientId], references: [id])
+
+  @@index([batchId])
+  @@index([ingredientId])
+}
+
+// ─── Inventory (Future-ready) ───────────────────────────────────────
+
+model InventoryLot {
+  id             String   @id @default(cuid())
+  organizationId String
+  ingredientId   String
+  supplierId     String?
+  lotNumber      String?
+  quantity       Float
+  unit           String   @default("g")
+  receivedAt     DateTime @default(now())
+  expiresAt      DateTime?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([organizationId])
+  @@index([ingredientId])
+}
+
+// ─── Audit & Notifications ──────────────────────────────────────────
+
+model AuditLog {
+  id             String   @id @default(cuid())
+  organizationId String
+  userId         String
+  action         String
+  entityType     String
+  entityId       String
+  oldValue       String?  // JSON string
+  newValue       String?  // JSON string
+  createdAt      DateTime @default(now())
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user         User         @relation(fields: [userId], references: [id])
+
+  @@index([organizationId])
+  @@index([userId])
+  @@index([entityType, entityId])
+  @@index([createdAt])
+}
+
+model Notification {
+  id             String   @id @default(cuid())
+  organizationId String
+  userId         String
+  type           String
+  title          String
+  message        String
+  entityType     String?
+  entityId       String?
+  isRead         Boolean  @default(false)
+  createdAt      DateTime @default(now())
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  user         User         @relation(fields: [userId], references: [id])
+
+  @@index([organizationId])
+  @@index([userId, isRead])
+  @@index([createdAt])
+}
