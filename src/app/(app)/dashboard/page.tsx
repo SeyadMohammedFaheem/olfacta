@@ -82,7 +82,7 @@ export default async function DashboardPage() {
           <div className="flex items-center gap-2">
             <h1 className="text-2xl font-bold tracking-tight text-foreground">Laboratory Dashboard</h1>
             <span className="text-xs px-2 py-0.5 rounded-full bg-primary/10 text-primary font-medium">
-              Aroma Labs
+              {user.organizationName || "Laboratory"}
             </span>
           </div>
           <p className="text-sm text-muted-foreground mt-0.5">
