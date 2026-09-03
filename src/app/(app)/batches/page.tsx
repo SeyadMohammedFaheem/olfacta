@@ -6,6 +6,7 @@ import { getBatches } from "@/services/batch/actions";
 import { formatDate } from "@/lib/utils";
 
 export const metadata = { title: "Batches — Olfacta" };
+export const dynamic = "force-dynamic";
 
 export default async function BatchesPage() {
   const batches = await getBatches();

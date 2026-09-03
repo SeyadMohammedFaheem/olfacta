@@ -7,7 +7,7 @@ const SECRET_KEY = new TextEncoder().encode(
 
 const publicRoutes = ["/", "/login", "/signup"];
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // Allow public routes

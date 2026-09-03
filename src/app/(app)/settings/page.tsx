@@ -6,6 +6,7 @@ import { Users, Building2, Shield, History } from "lucide-react";
 import { formatDateTime } from "@/lib/utils";
 
 export const metadata = { title: "Settings — Olfacta" };
+export const dynamic = "force-dynamic";
 
 export default async function SettingsPage() {
   const user = await getSessionOrThrow();

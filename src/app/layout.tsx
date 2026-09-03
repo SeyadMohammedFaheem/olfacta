@@ -1,10 +1,6 @@
-import type { Metadata } from "next";
 import "./globals.css";
 
-export const metadata: Metadata = {
-  title: "Olfacta — Professional Perfume Formulation",
-  description: "Create, validate, version, and scale fragrance formulas from one professional workspace.",
-};
+export const dynamic = "force-dynamic";
 
 export default function RootLayout({
   children,
@@ -13,6 +9,13 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
+      <head>
+        <title>Olfacta — Professional Perfume Formulation</title>
+        <meta
+          name="description"
+          content="Create, validate, version, and scale fragrance formulas from one professional workspace."
+        />
+      </head>
       <body className="min-h-screen bg-background font-sans antialiased">
         {children}
       </body>

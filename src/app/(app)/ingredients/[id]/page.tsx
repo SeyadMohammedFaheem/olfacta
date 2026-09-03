@@ -21,15 +21,8 @@ import {
   Percent,
 } from "lucide-react";
 
-export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params;
-  try {
-    const ingredient = await getIngredient(id);
-    return { title: `${ingredient.name} — Raw Material | Olfacta` };
-  } catch {
-    return { title: "Raw Material — Olfacta" };
-  }
-}
+export const dynamic = "force-dynamic";
+export const metadata = { title: "Raw Material Detail — Olfacta" };
 
 const materialTypeLabels: Record<string, { label: string; color: string }> = {
   FRAGRANCE: { label: "Fragrance Accord", color: "bg-purple-500/10 text-purple-600 border-purple-500/20" },

@@ -20,6 +20,7 @@ import { formatDate } from "@/lib/utils";
 import Link from "next/link";
 
 export const metadata = { title: "Dashboard — Olfacta" };
+export const dynamic = "force-dynamic";
 
 export default async function DashboardPage() {
   const user = await getSessionOrThrow();
@@ -356,7 +357,7 @@ export default async function DashboardPage() {
                         </Link>
                       </td>
                       <td className="px-5 py-2.5 text-xs text-muted-foreground">
-                        {finding.ingredient.name}
+                        {finding.ingredient?.name || "General Standard"}
                       </td>
                       <td className="px-5 py-2.5">
                         <ComplianceBadge status={finding.severity as any} />

@@ -3,6 +3,7 @@ import { getSessionOrThrow } from "@/lib/auth/session";
 import { ComplianceClient } from "./compliance-client";
 
 export const metadata = { title: "Compliance & Regulatory — Olfacta" };
+export const dynamic = "force-dynamic";
 
 export default async function CompliancePage() {
   const user = await getSessionOrThrow();

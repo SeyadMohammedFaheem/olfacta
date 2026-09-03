@@ -6,6 +6,7 @@ import { FileText, Download, ShieldCheck, Factory } from "lucide-react";
 import { ReportsClient } from "./reports-client";
 
 export const metadata = { title: "Reports — Olfacta" };
+export const dynamic = "force-dynamic";
 
 export default async function ReportsPage() {
   const user = await getSessionOrThrow();

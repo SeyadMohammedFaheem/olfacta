@@ -170,6 +170,8 @@ const STATIC_NAVIGATION: PaletteItem[] = [
   },
 ];
 
+type CategoryFilter = "ALL" | "ACTIONS" | "FORMULAS" | "MATERIALS" | "BATCHES";
+
 export interface CommandPaletteProps {
   open?: boolean;
   onOpenChange?: (open: boolean) => void;

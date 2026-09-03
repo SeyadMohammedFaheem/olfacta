@@ -1,5 +1,7 @@
 "use client";
 
+export const dynamic = "force-dynamic";
+
 export default function GlobalError({
   error,
   reset,
@@ -8,16 +10,14 @@ export default function GlobalError({
   reset: () => void;
 }) {
   return (
-    <html>
-      <body className="flex min-h-screen items-center justify-center p-6 bg-background text-foreground font-sans">
-        <div className="max-w-md text-center space-y-4">
-          <h2 className="text-xl font-bold">Something went wrong</h2>
-          <p className="text-sm text-muted-foreground">
-            {error.message || "An unexpected error occurred in the application."}
-          </p>
+    <html lang="en">
+      <body>
+        <div style={{ padding: "2rem", textAlign: "center", fontFamily: "sans-serif" }}>
+          <h2>Application Error</h2>
+          <p style={{ color: "#666" }}>An unexpected error occurred.</p>
           <button
             onClick={() => reset()}
-            className="px-4 py-2 text-sm font-medium bg-primary text-primary-foreground rounded-md hover:bg-primary/90"
+            style={{ padding: "0.5rem 1rem", marginTop: "1rem", cursor: "pointer" }}
           >
             Try again
           </button>
