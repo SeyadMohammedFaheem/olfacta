@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/db/prisma";
-import { getSessionOrThrow } from "@/lib/auth/session";
+import { getSession } from "@/lib/auth/session";
+import { redirect } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { StatusBadge, ComplianceBadge } from "@/components/ui/status-badge";
@@ -23,7 +24,10 @@ export const metadata = { title: "Dashboard — Olfacta" };
 export const dynamic = "force-dynamic";
 
 export default async function DashboardPage() {
-  const user = await getSessionOrThrow();
+  const user = await getSession();
+  if (!user) {
+    redirect("/login");
+  }
   const orgId = user.organizationId;
 
   const [formulas, batches, findings, ingredientsCount] = await Promise.all([

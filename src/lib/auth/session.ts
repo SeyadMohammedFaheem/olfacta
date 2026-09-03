@@ -1,5 +1,6 @@
 import { SignJWT, jwtVerify } from "jose";
 import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db/prisma";
 import type { SessionUser } from "@/types";
 
@@ -64,7 +65,7 @@ export async function destroySession(): Promise<void> {
 export async function getSessionOrThrow(): Promise<SessionUser> {
   const session = await getSession();
   if (!session) {
-    throw new Error("Unauthorized");
+    redirect("/login");
   }
   return session;
 }

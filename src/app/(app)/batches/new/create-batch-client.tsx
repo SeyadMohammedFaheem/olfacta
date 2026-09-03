@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -153,7 +154,7 @@ export function CreateBatchClient({ initialFormulaId, initialVersionId }: Create
       {!initialFormulaId && (
         <Card>
           <CardContent className="p-8 text-center text-sm text-muted-foreground">
-            Please select an approved formula from the <a href="/formulas" className="text-primary underline">Formulas</a> list to scale for batch production.
+            Please select an approved formula from the <Link href="/formulas" className="text-primary underline">Formulas</Link> list to scale for batch production.
           </CardContent>
         </Card>
       )}
