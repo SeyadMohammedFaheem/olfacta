@@ -255,7 +255,7 @@ export async function quickCreateOil(data: {
 export async function deleteIngredient(id: string): Promise<ActionResult> {
   try {
     const user = await getSessionOrThrow();
-    checkPermission(user.role, "ingredient:create");
+    checkPermission(user.role, "ingredient:delete");
 
     const ingredient = await prisma.ingredient.findFirst({
       where: { id, organizationId: user.organizationId },

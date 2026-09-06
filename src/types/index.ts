@@ -23,6 +23,7 @@ export type {
 
 export const Role = {
   ADMIN: "ADMIN",
+  CONTRIBUTOR: "CONTRIBUTOR",
   PERFUMER: "PERFUMER",
   PRODUCTION: "PRODUCTION",
   COMPLIANCE: "COMPLIANCE",

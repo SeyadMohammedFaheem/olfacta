@@ -5,7 +5,7 @@ const SECRET_KEY = new TextEncoder().encode(
   process.env.NEXTAUTH_SECRET || "olfacta-dev-secret-change-in-production"
 );
 
-const publicRoutes = ["/", "/login", "/signup"];
+const publicRoutes = ["/", "/login", "/signup", "/invite"];
 
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;

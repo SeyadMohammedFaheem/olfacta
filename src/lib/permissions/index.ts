@@ -17,6 +17,7 @@ type Action =
   | "ingredient:view"
   | "batch:create"
   | "batch:edit"
+  | "batch:delete"
   | "batch:view"
   | "batch:complete"
   | "batch:cancel"
@@ -37,7 +38,7 @@ const ROLE_PERMISSIONS: Record<Role, Action[]> = {
     "formula:create", "formula:edit", "formula:delete", "formula:view",
     "formula:submit", "formula:approve", "formula:reject", "formula:archive",
     "ingredient:create", "ingredient:edit", "ingredient:delete", "ingredient:view",
-    "batch:create", "batch:edit", "batch:view", "batch:complete", "batch:cancel",
+    "batch:create", "batch:edit", "batch:delete", "batch:view", "batch:complete", "batch:cancel",
     "compliance:view", "compliance:manage",
     "reports:view",
     "settings:view", "settings:edit",
@@ -45,9 +46,17 @@ const ROLE_PERMISSIONS: Record<Role, Action[]> = {
     "audit:view",
     "supplier:create", "supplier:edit", "supplier:delete", "supplier:view",
   ],
+  CONTRIBUTOR: [
+    "formula:create", "formula:edit", "formula:view", "formula:submit", "formula:archive",
+    "ingredient:create", "ingredient:edit", "ingredient:view",
+    "batch:create", "batch:view",
+    "compliance:view",
+    "reports:view",
+    "supplier:create", "supplier:edit", "supplier:view",
+  ],
   PERFUMER: [
-    "formula:create", "formula:edit", "formula:delete", "formula:view", "formula:submit", "formula:archive",
-    "ingredient:create", "ingredient:edit", "ingredient:delete", "ingredient:view",
+    "formula:create", "formula:edit", "formula:view", "formula:submit", "formula:archive",
+    "ingredient:create", "ingredient:edit", "ingredient:view",
     "batch:create", "batch:view",
     "compliance:view",
     "reports:view",
@@ -86,7 +95,7 @@ export function hasPermission(role: Role, action: Action): boolean {
 
 export function checkPermission(role: Role, action: Action): void {
   if (!hasPermission(role, action)) {
-    throw new Error(`Insufficient permissions: ${action} requires a different role than ${role}`);
+    throw new Error(`Insufficient permissions: Action "${action}" is restricted to Main Admin.`);
   }
 }
 
