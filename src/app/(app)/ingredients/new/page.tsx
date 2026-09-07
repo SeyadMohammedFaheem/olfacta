@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Card, CardContent } from "@/components/ui/card";
 import { createIngredient } from "@/services/ingredient/actions";
 import { toast } from "sonner";
+import { Droplets } from "lucide-react";
 
 export default function CreateIngredientPage() {
   const router = useRouter();
@@ -28,8 +29,9 @@ export default function CreateIngredientPage() {
   }
 
   return (
-    <div className="p-6 max-w-2xl mx-auto">
-      <div className="mb-6">
+    <div className="p-6 max-w-2xl mx-auto space-y-6">
+      {/* Header */}
+      <div>
         <h1 className="text-xl font-semibold tracking-tight">Add Ingredient</h1>
         <p className="text-sm text-muted-foreground mt-0.5">Add a new ingredient to your library</p>
       </div>

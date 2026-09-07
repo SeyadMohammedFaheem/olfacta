@@ -90,10 +90,7 @@ export function VersionCompareClient({ formula, initialV1, initialV2 }: VersionC
             <ArrowLeft className="h-4 w-4" />
           </Link>
           <div>
-            <div className="flex items-center gap-2">
-              <GitCompare className="h-5 w-5 text-primary" />
-              <h1 className="text-xl font-semibold tracking-tight">Version Comparison: {formula.name}</h1>
-            </div>
+            <h1 className="text-xl font-semibold tracking-tight">Version Comparison: {formula.name}</h1>
             <p className="text-xs text-muted-foreground mt-0.5">
               Inspect formulation evolution, material additions, removals, and dosage deltas
             </p>

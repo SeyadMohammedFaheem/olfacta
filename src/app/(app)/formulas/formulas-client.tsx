@@ -3,11 +3,12 @@
 import { useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Plus, Search, FlaskConical, Trash2, ArrowRight } from "lucide-react";
+import { Plus, Search, FlaskConical, Trash2, ArrowRight, FileSpreadsheet } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { EmptyState } from "@/components/ui/empty-state";
+import { ImportFormulaModal } from "./import-formula-modal";
 import {
   Dialog,
   DialogContent,
@@ -19,6 +20,7 @@ import {
 import { deleteFormula } from "@/services/formula/actions";
 import { formatDate } from "@/lib/utils";
 import { toast } from "sonner";
+import { PageHeader, FilterBar, FilterTag } from "@/components/ui/page-header";
 
 const productTypeLabels: Record<string, string> = {
   EAU_DE_PARFUM: "EDP",
@@ -33,26 +35,35 @@ const productTypeLabels: Record<string, string> = {
   OTHER: "Other",
 };
 
+const FORMULA_TYPES = [
+  { id: "ALL", label: "All Formulas" },
+  { id: "EAU_DE_PARFUM", label: "Eau de Parfum" },
+  { id: "EAU_DE_TOILETTE", label: "Eau de Toilette" },
+  { id: "PARFUM", label: "Extrait / Parfum" },
+  { id: "EAU_DE_COLOGNE", label: "Cologne" },
+  { id: "CANDLE", label: "Candles & Ambient" },
+];
+
 export function FormulasClient({ formulas, canDelete }: { formulas: any[]; canDelete: boolean }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [search, setSearch] = useState("");
-  const [deleteConfirm, setDeleteConfirm] = useState<{ id: string; name: string } | null>(null);
+  const [selectedType, setSelectedType] = useState("ALL");
+  const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [importOpen, setImportOpen] = useState(false);
 
-  const filtered = formulas.filter(
-    (f) =>
-      f.name.toLowerCase().includes(search.toLowerCase()) ||
-      (f.description && f.description.toLowerCase().includes(search.toLowerCase())) ||
-      (f.productType && f.productType.toLowerCase().includes(search.toLowerCase()))
-  );
+  const filtered = formulas.filter((f) => {
+    const matchSearch = f.name.toLowerCase().includes(search.toLowerCase());
+    const matchType = selectedType === "ALL" || f.productType === selectedType;
+    return matchSearch && matchType;
+  });
 
-  const handleDeleteFormula = async () => {
-    if (!deleteConfirm) return;
+  const handleDelete = (id: string) => {
     startTransition(async () => {
-      const res = await deleteFormula(deleteConfirm.id);
+      const res = await deleteFormula(id);
       if (res.success) {
-        toast.success(`Formula "${deleteConfirm.name}" deleted.`);
-        setDeleteConfirm(null);
+        toast.success("Formula deleted.");
+        setDeleteId(null);
         router.refresh();
       } else {
         toast.error(res.error || "Failed to delete formula.");
@@ -62,32 +73,52 @@ export function FormulasClient({ formulas, canDelete }: { formulas: any[]; canDe
 
   return (
     <div className="p-6 space-y-6 w-full">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-xl font-semibold tracking-tight">Formulas</h1>
-          <p className="text-sm text-muted-foreground mt-0.5">
-            Manage and edit your perfume formulations ({formulas.length} total)
-          </p>
+      <ImportFormulaModal open={importOpen} onOpenChange={setImportOpen} />
+      {/* Header */}
+      <PageHeader
+        title="Formulas"
+        description={`Manage and edit your perfume formulations (${formulas.length} total)`}
+        action={
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" onClick={() => setImportOpen(true)}>
+              <FileSpreadsheet className="mr-1.5 h-3.5 w-3.5 text-emerald-600" />
+              Import from Sheet
+            </Button>
+            <Button variant="outline" size="sm" asChild>
+              <Link href="/formulas/new">
+                <Plus className="mr-1.5 h-3.5 w-3.5" />
+                New Formula
+              </Link>
+            </Button>
+          </div>
+        }
+      />
+
+      {/* Filter & Search Bar */}
+      <FilterBar>
+        {/* Type Category Tabs */}
+        <div className="flex flex-wrap gap-1.5">
+          {FORMULA_TYPES.map((type) => (
+            <FilterTag
+              key={type.id}
+              label={type.label}
+              active={selectedType === type.id}
+              onClick={() => setSelectedType(type.id)}
+            />
+          ))}
         </div>
 
-        <div className="flex items-center gap-3">
-          <div className="relative w-full sm:w-64">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-            <Input
-              placeholder="Search formulas..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="pl-8 h-9 text-xs"
-            />
-          </div>
-          <Button asChild>
-            <Link href="/formulas/new">
-              <Plus className="mr-1 h-4 w-4" />
-              New Formula
-            </Link>
-          </Button>
+        {/* Search input */}
+        <div className="relative w-full sm:w-64">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+          <Input
+            placeholder="Search formulas..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="pl-8 h-9 text-xs"
+          />
         </div>
-      </div>
+      </FilterBar>
 
       {filtered.length === 0 ? (
         <EmptyState

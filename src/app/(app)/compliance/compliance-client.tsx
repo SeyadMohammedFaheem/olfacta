@@ -16,6 +16,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ComplianceBadge, DemoBadge } from "@/components/ui/status-badge";
+import { PageHeader } from "@/components/ui/page-header";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -88,20 +89,18 @@ export function ComplianceClient({
 
   return (
     <div className="p-6 space-y-6 w-full">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-xl font-semibold tracking-tight">Compliance & Regulatory Standards</h1>
-          <p className="text-sm text-muted-foreground mt-0.5">
-            Configurable regulatory rules, maximum concentration thresholds, and active findings
-          </p>
-        </div>
-
-        {canManage && (
-          <Button onClick={() => setDialogOpen(true)}>
-            <Plus className="mr-1.5 h-4 w-4" /> Add Safety Rule
-          </Button>
-        )}
-      </div>
+      {/* Header */}
+      <PageHeader
+        title="Compliance & Regulatory Standards"
+        description={`Configurable regulatory rules, maximum concentration thresholds, and active findings (${rules.length} rules)`}
+        action={
+          canManage ? (
+            <Button variant="outline" size="sm" onClick={() => setDialogOpen(true)}>
+              <Plus className="mr-1.5 h-3.5 w-3.5" /> Add Safety Rule
+            </Button>
+          ) : undefined
+        }
+      />
 
       {/* Metrics Cards */}
       <div className="grid gap-4 sm:grid-cols-4">

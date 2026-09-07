@@ -10,7 +10,9 @@ import { Card, CardContent } from "@/components/ui/card";
 import { createBatch } from "@/services/batch/actions";
 import { getFormula } from "@/services/formula/actions";
 import { calculateScaleFactor, calculateScaledQuantity, decimalRound } from "@/lib/calculations";
+import { PageHeader } from "@/components/ui/page-header";
 import { toast } from "sonner";
+import { Factory } from "lucide-react";
 
 interface CreateBatchClientProps {
   initialFormulaId: string;
@@ -51,10 +53,11 @@ export function CreateBatchClient({ initialFormulaId, initialVersionId }: Create
 
   return (
     <div className="p-6 space-y-6 w-full">
-      <div className="mb-6">
-        <h1 className="text-xl font-semibold tracking-tight">Create Production Batch</h1>
-        <p className="text-sm text-muted-foreground mt-0.5">Scale an approved formula for production dispensing</p>
-      </div>
+      {/* Header */}
+      <PageHeader
+        title="Create Production Batch"
+        description="Scale an approved formula for production dispensing"
+      />
 
       {formula && version && (
         <div className="space-y-6">

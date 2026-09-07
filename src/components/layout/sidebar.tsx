@@ -156,21 +156,12 @@ export function Sidebar({ user }: SidebarProps) {
               )}
             >
               <span className="flex items-center gap-2.5 truncate">
-                {isActive && item.href === "/dashboard" ? (
-                  // Solid circle indicator icon for active Overview matching reference
-                  <span className="flex h-4 w-4 items-center justify-center rounded-full bg-black text-white shrink-0">
-                    <svg viewBox="0 0 24 24" fill="currentColor" className="h-2.5 w-2.5">
-                      <polygon points="12 4 21 19 3 19" />
-                    </svg>
-                  </span>
-                ) : (
-                  <item.icon
-                    className={cn(
-                      "h-4 w-4 shrink-0 transition-colors",
-                      isActive ? "text-neutral-950" : "text-neutral-600 group-hover:text-neutral-900"
-                    )}
-                  />
-                )}
+                <item.icon
+                  className={cn(
+                    "h-4 w-4 shrink-0 transition-colors",
+                    isActive ? "text-neutral-950" : "text-neutral-600 group-hover:text-neutral-900"
+                  )}
+                />
                 <span className="truncate">{item.label}</span>
               </span>
               {item.hasChevron && (

@@ -3,7 +3,7 @@
 import { useState, useTransition, useCallback } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Play, CheckCircle, XCircle, AlertCircle, Save } from "lucide-react";
+import { ArrowLeft, Play, CheckCircle, XCircle, AlertCircle, Save, Factory } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";

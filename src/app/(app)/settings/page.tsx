@@ -2,7 +2,8 @@ import { prisma } from "@/lib/db/prisma";
 import { getSessionOrThrow } from "@/lib/auth/session";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Building2, Shield, History, Crown } from "lucide-react";
+import { Building2, Shield, History, Crown, Settings } from "lucide-react";
+import { PageHeader } from "@/components/ui/page-header";
 import { formatDateTime } from "@/lib/utils";
 import { TeamManagement } from "./team-management";
 
@@ -37,21 +38,20 @@ export default async function SettingsPage() {
   const isAdmin = user.role === "ADMIN";
 
   return (
-    <div className="p-6 space-y-6 w-full max-w-6xl mx-auto">
-      <div>
-        <div className="flex items-center gap-2">
-          <h1 className="text-xl font-semibold tracking-tight">Organization & Team Settings</h1>
-          {isAdmin && (
+    <div className="p-6 space-y-6 w-full">
+      {/* Header */}
+      <PageHeader
+        title="Organization & Team Settings"
+        description="Manage workspace profile, assign contributor permissions, and review the audit trail."
+        badge={
+          isAdmin ? (
             <Badge variant="outline" className="text-xs bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-950/40 dark:text-purple-300 dark:border-purple-800 gap-1">
               <Crown className="h-3 w-3 text-purple-600" />
               Main Admin Workspace
             </Badge>
-          )}
-        </div>
-        <p className="text-sm text-muted-foreground mt-0.5">
-          Manage workspace profile, assign contributor permissions, and review the audit trail.
-        </p>
-      </div>
+          ) : undefined
+        }
+      />
 
       <div className="grid gap-6 sm:grid-cols-2">
         {/* Organization Info */}

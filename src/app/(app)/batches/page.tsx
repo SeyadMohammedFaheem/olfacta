@@ -1,7 +1,9 @@
 import Link from "next/link";
-import { Factory } from "lucide-react";
+import { Factory, Plus } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { EmptyState } from "@/components/ui/empty-state";
+import { PageHeader } from "@/components/ui/page-header";
 import { getBatches } from "@/services/batch/actions";
 import { formatDate } from "@/lib/utils";
 
@@ -12,11 +14,19 @@ export default async function BatchesPage() {
   const batches = await getBatches();
 
   return (
-    <div className="p-6 space-y-6">
-      <div>
-        <h1 className="text-xl font-semibold tracking-tight">Batches</h1>
-        <p className="text-sm text-muted-foreground mt-0.5">Production batches and tracking</p>
-      </div>
+    <div className="p-6 space-y-6 w-full">
+      {/* Header */}
+      <PageHeader
+        title="Batches & Production"
+        description={`Production batches, scale blending, and tracking (${batches.length} total)`}
+        action={
+          <Button variant="outline" size="sm" asChild>
+            <Link href="/batches/new">
+              <Plus className="mr-1.5 h-3.5 w-3.5" /> Scale New Batch
+            </Link>
+          </Button>
+        }
+      />
 
       {batches.length === 0 ? (
         <EmptyState

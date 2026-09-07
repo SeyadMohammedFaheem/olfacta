@@ -9,14 +9,14 @@ interface StatusBadgeProps {
 
 const statusConfig: Record<string, { label: string; className: string }> = {
   DRAFT: { label: "Draft", className: "bg-muted text-muted-foreground" },
-  IN_REVIEW: { label: "In Review", className: "compliance-review" },
-  APPROVED: { label: "Approved", className: "compliance-pass" },
-  REJECTED: { label: "Rejected", className: "compliance-violation" },
+  IN_REVIEW: { label: "In Review", className: "bg-review-bg text-review-foreground" },
+  APPROVED: { label: "Approved", className: "bg-compliant-bg text-compliant-foreground" },
+  REJECTED: { label: "Rejected", className: "bg-violation-bg text-violation-foreground" },
   ARCHIVED: { label: "Archived", className: "bg-muted text-muted-foreground" },
   PLANNED: { label: "Planned", className: "bg-muted text-muted-foreground" },
-  IN_PRODUCTION: { label: "In Production", className: "compliance-review" },
-  QC: { label: "QC", className: "compliance-warning" },
-  COMPLETED: { label: "Completed", className: "compliance-pass" },
+  IN_PRODUCTION: { label: "In Production", className: "bg-review-bg text-review-foreground" },
+  QC: { label: "QC", className: "bg-warning-bg text-warning-foreground" },
+  COMPLETED: { label: "Completed", className: "bg-compliant-bg text-compliant-foreground" },
   CANCELLED: { label: "Cancelled", className: "bg-muted text-muted-foreground" },
 };
 

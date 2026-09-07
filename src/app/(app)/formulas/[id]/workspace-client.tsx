@@ -738,7 +738,7 @@ export function FormulaWorkspaceClient({ formula, rules, user }: FormulaWorkspac
 
             {/* Table */}
             <div className="rounded-lg border bg-card overflow-hidden">
-              <table className="w-full text-sm formula-table">
+              <table className="w-full text-sm">
                 <thead>
                   <tr className="text-left text-xs text-muted-foreground border-b bg-muted/20">
                     <th className="px-4 py-2.5 w-8 font-medium">#</th>

@@ -2,11 +2,13 @@
 
 import { useState, useTransition } from "react";
 import Link from "next/link";
-import { Plus, Search, Filter, Beaker, Droplets, Sparkles, DollarSign, Building, Trash2, Layers } from "lucide-react";
+import { Plus, Search, Filter, Beaker, Droplets, Sparkles, DollarSign, Building, Trash2, Layers, FileSpreadsheet } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
+import { PageHeader, FilterBar, FilterTag } from "@/components/ui/page-header";
+import { ImportIngredientsModal } from "./import-ingredients-modal";
 import {
   Dialog,
   DialogContent,
@@ -180,46 +182,41 @@ export function IngredientsClient({ ingredients, canCreate }: { ingredients: any
     });
   };
 
+  const [importOpen, setImportOpen] = useState(false);
+
   return (
     <div className="p-6 space-y-6">
+      <ImportIngredientsModal open={importOpen} onOpenChange={setImportOpen} />
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2">
-            <Droplets className="h-5 w-5 text-primary" />
-            <h1 className="text-xl font-semibold tracking-tight">My Raw Materials & Oil Collection</h1>
-          </div>
-          <p className="text-sm text-muted-foreground mt-0.5">
-            Your laboratory organ of essential oils, aroma molecules, extracts, and carriers ({ingredients.length} total)
-          </p>
-        </div>
-
-        {canCreate && (
-          <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" onClick={() => setAddOilOpen(true)}>
-              <Plus className="mr-1.5 h-3.5 w-3.5" /> Add Oil to Collection
-            </Button>
-          </div>
-        )}
-      </div>
+      <PageHeader
+        title="My Raw Materials & Oil Collection"
+        description={`Your laboratory organ of essential oils, aroma molecules, extracts, and carriers (${ingredients.length} total)`}
+        action={
+          canCreate ? (
+            <div className="flex items-center gap-2">
+              <Button variant="outline" size="sm" onClick={() => setImportOpen(true)}>
+                <FileSpreadsheet className="mr-1.5 h-3.5 w-3.5 text-emerald-600" />
+                Import from Sheet
+              </Button>
+              <Button variant="outline" size="sm" onClick={() => setAddOilOpen(true)}>
+                <Plus className="mr-1.5 h-3.5 w-3.5" /> Add Oil to Collection
+              </Button>
+            </div>
+          ) : undefined
+        }
+      />
 
       {/* Filter & Search Bar */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+      <FilterBar>
         {/* Type Category Tabs */}
         <div className="flex flex-wrap gap-1.5">
           {MATERIAL_TYPES.map((type) => (
-            <button
+            <FilterTag
               key={type.id}
-              type="button"
+              label={type.label}
+              active={selectedType === type.id}
               onClick={() => setSelectedType(type.id)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer ${
-                selectedType === type.id
-                  ? "bg-primary text-primary-foreground font-semibold"
-                  : "bg-muted text-muted-foreground hover:bg-muted/80 hover:text-foreground"
-              }`}
-            >
-              {type.label}
-            </button>
+            />
           ))}
         </div>
 
@@ -233,7 +230,7 @@ export function IngredientsClient({ ingredients, canCreate }: { ingredients: any
             className="pl-8 h-9 text-xs"
           />
         </div>
-      </div>
+      </FilterBar>
 
       {/* Ingredients Grid / Table */}
       {filtered.length === 0 ? (
