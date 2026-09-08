@@ -32,7 +32,6 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { logoutAction } from "@/app/(auth)/actions";
 import type { SessionUser } from "@/types";
-import { CommandPalette } from "@/components/ui/command-palette";
 
 interface SidebarProps {
   user?: SessionUser | null;
@@ -53,7 +52,6 @@ const secondaryNavItems = [
 
 export function Sidebar({ user }: SidebarProps) {
   const pathname = usePathname();
-  const [paletteOpen, setPaletteOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
 
   const orgName = user?.organizationName || "Olfacta Lab";
@@ -124,18 +122,18 @@ export function Sidebar({ user }: SidebarProps) {
           </DropdownMenuContent>
         </DropdownMenu>
 
-        {/* Find Input Button */}
+        {/* Search Input Button */}
         <button
           type="button"
-          onClick={() => setPaletteOpen(true)}
+          onClick={() => window.dispatchEvent(new CustomEvent("open-command-palette"))}
           className="flex items-center justify-between w-full h-8 px-2.5 rounded-md border border-neutral-200/90 bg-white hover:border-neutral-300 text-neutral-500 hover:text-neutral-800 transition-colors text-xs cursor-pointer group"
         >
           <span className="flex items-center gap-2 text-neutral-500 group-hover:text-neutral-800">
             <Search className="h-3.5 w-3.5 text-neutral-400 group-hover:text-neutral-600" />
-            <span className="text-[13px]">Find</span>
+            <span className="text-[13px]">Search...</span>
           </span>
-          <kbd className="px-1.5 py-0.5 text-[10px] font-mono font-medium rounded border border-neutral-200 bg-neutral-50 text-neutral-400 group-hover:text-neutral-600">
-            F
+          <kbd className="px-2 py-0.5 text-[11px] font-mono font-medium rounded border border-neutral-200 bg-neutral-50 text-neutral-400 group-hover:text-neutral-600">
+            /
           </kbd>
         </button>
       </div>
@@ -293,9 +291,6 @@ export function Sidebar({ user }: SidebarProps) {
           </DropdownMenu>
         </div>
       </div>
-
-      {/* Global Command Palette modal connected to sidebar Find */}
-      <CommandPalette open={paletteOpen} onOpenChange={setPaletteOpen} />
     </aside>
   );
 }

@@ -45,69 +45,94 @@ export async function bulkImportIngredientsFromSheet(
       return { success: false, error: "No rows provided for import." };
     }
 
+    // 1. Sanitize items
+    const validItems = items
+      .map((it) => ({ ...it, name: it.name?.trim() }))
+      .filter((it): it is SheetIngredientInput & { name: string } => !!it.name);
+
+    if (validItems.length === 0) {
+      return { success: false, error: "No valid material names found in import." };
+    }
+
+    // 2. Fetch existing ingredients for this organization in ONE query
+    const names = Array.from(new Set(validItems.map((it) => it.name)));
+    const existingList = await prisma.ingredient.findMany({
+      where: {
+        organizationId: user.organizationId,
+        name: { in: names },
+      },
+      select: {
+        id: true,
+        name: true,
+        casNumber: true,
+        inciName: true,
+        costPerUnit: true,
+        description: true,
+        dilutionPercentage: true,
+        diluentSolvent: true,
+      },
+    });
+
+    const existingMap = new Map<string, (typeof existingList)[0]>();
+    for (const ing of existingList) {
+      existingMap.set(ing.name.toLowerCase(), ing);
+    }
+
     let created = 0;
     let updated = 0;
 
-    await prisma.$transaction(async (tx) => {
-      for (const item of items) {
-        const trimmedName = item.name?.trim();
-        if (!trimmedName) continue;
+    const validTypes = ["ESSENTIAL_OIL", "AROMA_CHEMICAL", "EXTRACT", "SOLVENT", "BASE", "FRAGRANCE", "OTHER"];
 
-        // Check if ingredient already exists in this org
-        const existing = await tx.ingredient.findFirst({
-          where: {
-            organizationId: user.organizationId,
-            name: { equals: trimmedName },
+    // 3. Process items directly without an interactive long transaction
+    for (const item of validItems) {
+      const existing = existingMap.get(item.name.toLowerCase());
+      const matType = validTypes.includes(item.materialType?.toUpperCase() || "")
+        ? (item.materialType?.toUpperCase() as any)
+        : "FRAGRANCE";
+
+      if (existing) {
+        await prisma.ingredient.update({
+          where: { id: existing.id },
+          data: {
+            casNumber: item.casNumber?.trim() || existing.casNumber,
+            inciName: item.inciName?.trim() || existing.inciName,
+            costPerUnit: typeof item.costPerUnit === "number" ? item.costPerUnit : existing.costPerUnit,
+            description: item.description?.trim() || existing.description,
+            dilutionPercentage: typeof item.dilutionPercentage === "number" ? item.dilutionPercentage : existing.dilutionPercentage,
+            diluentSolvent: item.diluentSolvent?.trim() || existing.diluentSolvent,
           },
         });
-
-        const validTypes = ["ESSENTIAL_OIL", "AROMA_CHEMICAL", "EXTRACT", "SOLVENT", "BASE", "FRAGRANCE", "OTHER"];
-        const matType = validTypes.includes(item.materialType?.toUpperCase() || "")
-          ? (item.materialType?.toUpperCase() as any)
-          : "FRAGRANCE";
-
-        if (existing) {
-          await tx.ingredient.update({
-            where: { id: existing.id },
-            data: {
-              casNumber: item.casNumber?.trim() || existing.casNumber,
-              inciName: item.inciName?.trim() || existing.inciName,
-              costPerUnit: typeof item.costPerUnit === "number" ? item.costPerUnit : existing.costPerUnit,
-              description: item.description?.trim() || existing.description,
-              dilutionPercentage: typeof item.dilutionPercentage === "number" ? item.dilutionPercentage : existing.dilutionPercentage,
-              diluentSolvent: item.diluentSolvent?.trim() || existing.diluentSolvent,
-            },
-          });
-          updated++;
-        } else {
-          await tx.ingredient.create({
-            data: {
-              organizationId: user.organizationId,
-              name: trimmedName,
-              casNumber: item.casNumber?.trim() || null,
-              inciName: item.inciName?.trim() || null,
-              materialType: matType,
-              costPerUnit: typeof item.costPerUnit === "number" ? item.costPerUnit : null,
-              description: item.description?.trim() || null,
-              dilutionPercentage: typeof item.dilutionPercentage === "number" ? item.dilutionPercentage : 100,
-              diluentSolvent: item.diluentSolvent?.trim() || "None (Pure)",
-              status: "ACTIVE",
-            },
-          });
-          created++;
-        }
+        updated++;
+      } else {
+        const newIng = await prisma.ingredient.create({
+          data: {
+            organizationId: user.organizationId,
+            name: item.name,
+            casNumber: item.casNumber?.trim() || null,
+            inciName: item.inciName?.trim() || null,
+            materialType: matType,
+            costPerUnit: typeof item.costPerUnit === "number" ? item.costPerUnit : null,
+            description: item.description?.trim() || null,
+            dilutionPercentage: typeof item.dilutionPercentage === "number" ? item.dilutionPercentage : 100,
+            diluentSolvent: item.diluentSolvent?.trim() || "None (Pure)",
+            status: "ACTIVE",
+          },
+        });
+        existingMap.set(item.name.toLowerCase(), newIng as any);
+        created++;
       }
+    }
 
-      await tx.auditLog.create({
-        data: {
-          organizationId: user.organizationId,
-          userId: user.id,
-          action: "INGREDIENTS_BULK_IMPORTED",
-          entityType: "Ingredient",
-          entityId: "bulk",
-          newValue: JSON.stringify({ created, updated, total: items.length }),
-        },
-      });
+    // 4. Record audit log
+    await prisma.auditLog.create({
+      data: {
+        organizationId: user.organizationId,
+        userId: user.id,
+        action: "INGREDIENTS_BULK_IMPORTED",
+        entityType: "Ingredient",
+        entityId: "bulk",
+        newValue: JSON.stringify({ created, updated, total: validItems.length }),
+      },
     });
 
     revalidatePath("/ingredients");
@@ -116,7 +141,7 @@ export async function bulkImportIngredientsFromSheet(
 
     return {
       success: true,
-      data: { created, updated, total: items.length },
+      data: { created, updated, total: validItems.length },
     };
   } catch (error) {
     return {
@@ -145,96 +170,102 @@ export async function importFormulaFromSheet(
       return { success: false, error: "Formula must have at least one ingredient row." };
     }
 
-    let createdFormulaId = "";
+    // 1. Resolve / Pre-fetch or create all required ingredients first
+    const ingredientNames = Array.from(new Set(input.ingredients.map((i) => i.name.trim()).filter(Boolean)));
+    const existingIngredients = await prisma.ingredient.findMany({
+      where: {
+        organizationId: user.organizationId,
+        name: { in: ingredientNames },
+      },
+      select: { id: true, name: true },
+    });
 
-    await prisma.$transaction(async (tx) => {
-      // 1. Create Formula
-      const formula = await tx.formula.create({
+    const ingMap = new Map<string, string>();
+    for (const ing of existingIngredients) {
+      ingMap.set(ing.name.toLowerCase(), ing.id);
+    }
+
+    // Create any missing ingredients
+    for (const row of input.ingredients) {
+      const ingName = row.name.trim();
+      if (!ingName || ingMap.has(ingName.toLowerCase())) continue;
+
+      const created = await prisma.ingredient.create({
         data: {
           organizationId: user.organizationId,
-          name: input.formulaName.trim(),
-          description: input.description?.trim() || "Imported from spreadsheet",
-          productType: (input.productType as any) || "EAU_DE_PARFUM",
-          status: "DRAFT",
-          createdById: user.id,
+          name: ingName,
+          casNumber: row.casNumber?.trim() || null,
+          materialType: "FRAGRANCE",
+          status: "ACTIVE",
         },
+        select: { id: true, name: true },
       });
+      ingMap.set(ingName.toLowerCase(), created.id);
+    }
 
-      createdFormulaId = formula.id;
+    // 2. Calculate weights
+    const totalWeight = input.ingredients.reduce(
+      (sum, ing) => sum + (typeof ing.quantity === "number" && !isNaN(ing.quantity) ? ing.quantity : 0),
+      0
+    );
+    const targetWeight = input.targetWeight && input.targetWeight > 0 ? input.targetWeight : (totalWeight > 0 ? totalWeight : 1000);
 
-      // 2. Resolve/Create ingredients and calculate total weight
-      const totalWeight = input.ingredients.reduce(
-        (sum, ing) => sum + (typeof ing.quantity === "number" && !isNaN(ing.quantity) ? ing.quantity : 0),
-        0
-      );
+    // 3. Create Formula and Version
+    const formula = await prisma.formula.create({
+      data: {
+        organizationId: user.organizationId,
+        name: input.formulaName.trim(),
+        description: input.description?.trim() || "Imported from spreadsheet",
+        productType: (input.productType as any) || "EAU_DE_PARFUM",
+        status: "DRAFT",
+        createdById: user.id,
+      },
+    });
 
-      const targetWeight = input.targetWeight && input.targetWeight > 0 ? input.targetWeight : (totalWeight > 0 ? totalWeight : 1000);
+    const version = await prisma.formulaVersion.create({
+      data: {
+        formulaId: formula.id,
+        versionNumber: 1,
+        targetWeight,
+        concentration: input.concentration || 20,
+        totalWeight,
+        totalPercentage: targetWeight > 0 ? (totalWeight / targetWeight) * 100 : 100,
+        status: "DRAFT",
+        notes: "Imported via spreadsheet import",
+        createdById: user.id,
+      },
+    });
 
-      // 3. Create Version 1
-      const version = await tx.formulaVersion.create({
-        data: {
-          formulaId: formula.id,
-          versionNumber: 1,
-          targetWeight,
-          concentration: input.concentration || 20,
-          totalWeight,
-          totalPercentage: targetWeight > 0 ? (totalWeight / targetWeight) * 100 : 100,
-          status: "DRAFT",
-          notes: "Imported via spreadsheet import",
-          createdById: user.id,
-        },
-      });
-
-      // 4. Link Formula Ingredients
-      for (let i = 0; i < input.ingredients.length; i++) {
-        const row = input.ingredients[i];
-        const ingName = row.name.trim();
-        if (!ingName) continue;
-
-        // Find or create in organ
-        let ingredient = await tx.ingredient.findFirst({
-          where: {
-            organizationId: user.organizationId,
-            name: { equals: ingName },
-          },
-        });
-
-        if (!ingredient) {
-          ingredient = await tx.ingredient.create({
-            data: {
-              organizationId: user.organizationId,
-              name: ingName,
-              casNumber: row.casNumber?.trim() || null,
-              materialType: "FRAGRANCE",
-              status: "ACTIVE",
-            },
-          });
-        }
-
-        const qty = typeof row.quantity === "number" && !isNaN(row.quantity) ? row.quantity : 0;
+    // 4. Batch create Formula Ingredients
+    const formulaIngredientsData = input.ingredients
+      .filter((r) => r.name.trim() && ingMap.has(r.name.trim().toLowerCase()))
+      .map((r, i) => {
+        const qty = typeof r.quantity === "number" && !isNaN(r.quantity) ? r.quantity : 0;
         const pct = targetWeight > 0 ? (qty / targetWeight) * 100 : 0;
-
-        await tx.formulaIngredient.create({
-          data: {
-            formulaVersionId: version.id,
-            ingredientId: ingredient.id,
-            quantity: qty,
-            percentage: pct,
-            sortOrder: i,
-          },
-        });
-      }
-
-      await tx.auditLog.create({
-        data: {
-          organizationId: user.organizationId,
-          userId: user.id,
-          action: "FORMULA_IMPORTED_FROM_SHEET",
-          entityType: "Formula",
-          entityId: formula.id,
-          newValue: JSON.stringify({ name: formula.name, ingredientsCount: input.ingredients.length }),
-        },
+        return {
+          formulaVersionId: version.id,
+          ingredientId: ingMap.get(r.name.trim().toLowerCase())!,
+          quantity: qty,
+          percentage: pct,
+          sortOrder: i,
+        };
       });
+
+    if (formulaIngredientsData.length > 0) {
+      await prisma.formulaIngredient.createMany({
+        data: formulaIngredientsData,
+      });
+    }
+
+    await prisma.auditLog.create({
+      data: {
+        organizationId: user.organizationId,
+        userId: user.id,
+        action: "FORMULA_IMPORTED_FROM_SHEET",
+        entityType: "Formula",
+        entityId: formula.id,
+        newValue: JSON.stringify({ name: formula.name, ingredientsCount: input.ingredients.length }),
+      },
     });
 
     revalidatePath("/formulas");
@@ -243,7 +274,7 @@ export async function importFormulaFromSheet(
     return {
       success: true,
       data: {
-        formulaId: createdFormulaId,
+        formulaId: formula.id,
         ingredientCount: input.ingredients.length,
       },
     };

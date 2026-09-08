@@ -129,27 +129,27 @@ export function BatchDetailClient({ batch, user }: BatchDetailClientProps) {
         </div>
       </div>
 
-      {/* Info Card */}
-      <div className="grid gap-4 sm:grid-cols-4">
-        <Card>
+      {/* Info Cards (12-column grid: 4 x 3 cols, 24px gap) */}
+      <div className="grid grid-cols-12 gap-6">
+        <Card className="col-span-12 sm:col-span-6 lg:col-span-3">
           <CardContent className="p-4">
             <span className="text-xs text-muted-foreground">Target Batch Size</span>
             <p className="text-lg font-semibold tabular-nums mt-0.5">{batch.targetQuantity.toLocaleString()} {batch.unit}</p>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="col-span-12 sm:col-span-6 lg:col-span-3">
           <CardContent className="p-4">
             <span className="text-xs text-muted-foreground">Formula Size</span>
             <p className="text-lg font-semibold tabular-nums mt-0.5">{batch.formulaVersion.targetWeight} {batch.unit}</p>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="col-span-12 sm:col-span-6 lg:col-span-3">
           <CardContent className="p-4">
             <span className="text-xs text-muted-foreground">Scaling Factor</span>
             <p className="text-lg font-semibold tabular-nums mt-0.5">{batch.scaleFactor}×</p>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="col-span-12 sm:col-span-6 lg:col-span-3">
           <CardContent className="p-4">
             <span className="text-xs text-muted-foreground">Created At</span>
             <p className="text-sm font-semibold mt-0.5">{formatDate(batch.createdAt)}</p>

@@ -102,42 +102,38 @@ export function ComplianceClient({
         }
       />
 
-      {/* Metrics Cards */}
-      <div className="grid gap-4 sm:grid-cols-4">
-        <Card>
-          <CardContent className="p-4 flex items-center justify-between">
+      {/* Metrics Cards (12-column grid: 4 x 3 cols, 24px gap) */}
+      <div className="grid grid-cols-12 gap-6">
+        <Card className="col-span-12 sm:col-span-6 lg:col-span-3">
+          <CardContent className="p-4">
             <div>
               <p className="text-xs text-muted-foreground uppercase font-semibold">Compliant Items</p>
               <p className="text-2xl font-bold text-compliant tabular-nums mt-0.5">{compliant}</p>
             </div>
-            <CheckCircle2 className="h-6 w-6 text-compliant/50" />
           </CardContent>
         </Card>
-        <Card>
-          <CardContent className="p-4 flex items-center justify-between">
+        <Card className="col-span-12 sm:col-span-6 lg:col-span-3">
+          <CardContent className="p-4">
             <div>
               <p className="text-xs text-muted-foreground uppercase font-semibold">Safety Warnings</p>
               <p className="text-2xl font-bold text-warning tabular-nums mt-0.5">{warnings}</p>
             </div>
-            <AlertTriangle className="h-6 w-6 text-warning/50" />
           </CardContent>
         </Card>
-        <Card>
-          <CardContent className="p-4 flex items-center justify-between">
+        <Card className="col-span-12 sm:col-span-6 lg:col-span-3">
+          <CardContent className="p-4">
             <div>
               <p className="text-xs text-muted-foreground uppercase font-semibold">Active Violations</p>
               <p className="text-2xl font-bold text-violation tabular-nums mt-0.5">{violations}</p>
             </div>
-            <XCircle className="h-6 w-6 text-violation/50" />
           </CardContent>
         </Card>
-        <Card>
-          <CardContent className="p-4 flex items-center justify-between">
+        <Card className="col-span-12 sm:col-span-6 lg:col-span-3">
+          <CardContent className="p-4">
             <div>
               <p className="text-xs text-muted-foreground uppercase font-semibold">Review Required</p>
               <p className="text-2xl font-bold text-review tabular-nums mt-0.5">{reviewRequired}</p>
             </div>
-            <Eye className="h-6 w-6 text-review/50" />
           </CardContent>
         </Card>
       </div>

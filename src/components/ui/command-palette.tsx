@@ -51,7 +51,6 @@ const STATIC_ACTIONS: PaletteItem[] = [
     iconBg: "bg-primary/10",
     iconColor: "text-primary",
     href: "/formulas/new",
-    shortcut: "⌘N",
     badge: "Action",
   },
   {
@@ -63,7 +62,6 @@ const STATIC_ACTIONS: PaletteItem[] = [
     iconBg: "bg-violet-500/10",
     iconColor: "text-violet-600",
     href: "/ingredients",
-    shortcut: "⌘M",
     badge: "Action",
   },
   {
@@ -100,7 +98,6 @@ const STATIC_NAVIGATION: PaletteItem[] = [
     iconBg: "bg-muted",
     iconColor: "text-foreground",
     href: "/dashboard",
-    shortcut: "G D",
   },
   {
     id: "nav-formulas",
@@ -111,7 +108,6 @@ const STATIC_NAVIGATION: PaletteItem[] = [
     iconBg: "bg-muted",
     iconColor: "text-foreground",
     href: "/formulas",
-    shortcut: "G F",
   },
   {
     id: "nav-ingredients",
@@ -122,7 +118,6 @@ const STATIC_NAVIGATION: PaletteItem[] = [
     iconBg: "bg-muted",
     iconColor: "text-foreground",
     href: "/ingredients",
-    shortcut: "G I",
   },
   {
     id: "nav-batches",
@@ -133,7 +128,6 @@ const STATIC_NAVIGATION: PaletteItem[] = [
     iconBg: "bg-muted",
     iconColor: "text-foreground",
     href: "/batches",
-    shortcut: "G B",
   },
   {
     id: "nav-compliance",
@@ -144,7 +138,6 @@ const STATIC_NAVIGATION: PaletteItem[] = [
     iconBg: "bg-muted",
     iconColor: "text-foreground",
     href: "/compliance",
-    shortcut: "G C",
   },
   {
     id: "nav-reports",
@@ -155,7 +148,6 @@ const STATIC_NAVIGATION: PaletteItem[] = [
     iconBg: "bg-muted",
     iconColor: "text-foreground",
     href: "/reports",
-    shortcut: "G R",
   },
   {
     id: "nav-settings",
@@ -166,7 +158,6 @@ const STATIC_NAVIGATION: PaletteItem[] = [
     iconBg: "bg-muted",
     iconColor: "text-foreground",
     href: "/settings",
-    shortcut: "G S",
   },
 ];
 
@@ -213,9 +204,24 @@ export function CommandPalette({ open: controlledOpen, onOpenChange }: CommandPa
   // Global hotkey Ctrl+K / Cmd+K & custom open event
   React.useEffect(() => {
     const down = (e: KeyboardEvent) => {
+      // Allow Ctrl+K / Cmd+K
       if ((e.key === "k" || e.key === "K") && (e.metaKey || e.ctrlKey)) {
         e.preventDefault();
         setOpen((prev) => !prev);
+        return;
+      }
+
+      // Allow "/" shortcut when not focused in an input, textarea, or contentEditable
+      if (e.key === "/" && !e.metaKey && !e.ctrlKey) {
+        const target = e.target as HTMLElement | null;
+        const isInput =
+          target instanceof HTMLInputElement ||
+          target instanceof HTMLTextAreaElement ||
+          target?.isContentEditable;
+        if (!isInput) {
+          e.preventDefault();
+          setOpen(true);
+        }
       }
     };
 

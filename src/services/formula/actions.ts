@@ -635,3 +635,169 @@ export async function deleteFormula(formulaId: string): Promise<ActionResult> {
     return { success: false, error: error instanceof Error ? error.message : "Failed to delete formula." };
   }
 }
+
+export async function discardFormulaVersion(
+  formulaId: string,
+  versionId: string
+): Promise<ActionResult<{ remainingVersionId?: string }>> {
+  try {
+    const user = await getSessionOrThrow();
+    checkPermission(user.role, "formula:edit");
+
+    const formula = await prisma.formula.findFirst({
+      where: { id: formulaId, organizationId: user.organizationId },
+      include: {
+        versions: {
+          orderBy: { versionNumber: "desc" },
+        },
+      },
+    });
+
+    if (!formula) return { success: false, error: "Formula not found." };
+    if (formula.versions.length <= 1) {
+      return { success: false, error: "Cannot delete the only version of a formula. Delete the entire formula instead." };
+    }
+
+    const targetVersion = formula.versions.find((v) => v.id === versionId);
+    if (!targetVersion) return { success: false, error: "Version not found." };
+
+    // Check if this version is used in any production batches
+    const batchCount = await prisma.batch.count({
+      where: { formulaVersionId: versionId },
+    });
+    if (batchCount > 0) {
+      return { success: false, error: `Cannot discard v${targetVersion.versionNumber} because it is linked to ${batchCount} production batch(es).` };
+    }
+
+    await prisma.$transaction(async (tx) => {
+      // Clean up version-specific relations
+      await tx.complianceSnapshot.deleteMany({
+        where: { formulaVersionId: versionId },
+      });
+      await tx.formulaIngredient.deleteMany({
+        where: { formulaVersionId: versionId },
+      });
+      await tx.formulaVersion.delete({
+        where: { id: versionId },
+      });
+
+      // Find the latest remaining version to sync formula status
+      const remainingVersions = await tx.formulaVersion.findMany({
+        where: { formulaId },
+        orderBy: { versionNumber: "desc" },
+      });
+
+      if (remainingVersions.length > 0) {
+        const topVersion = remainingVersions[0];
+        await tx.formula.update({
+          where: { id: formulaId },
+          data: { status: topVersion.status },
+        });
+      }
+
+      await tx.auditLog.create({
+        data: {
+          organizationId: user.organizationId,
+          userId: user.id,
+          action: "VERSION_DISCARDED",
+          entityType: "FormulaVersion",
+          entityId: versionId,
+          oldValue: JSON.stringify({ versionNumber: targetVersion.versionNumber, status: targetVersion.status }),
+        },
+      });
+    });
+
+    revalidatePath(`/formulas/${formulaId}`);
+    revalidatePath("/formulas");
+    return { success: true };
+  } catch (error) {
+    return { success: false, error: error instanceof Error ? error.message : "Failed to discard version." };
+  }
+}
+
+export async function revertToFormulaVersion(
+  formulaId: string,
+  sourceVersionId: string
+): Promise<ActionResult<{ newVersionId: string; versionNumber: number }>> {
+  try {
+    const user = await getSessionOrThrow();
+    checkPermission(user.role, "formula:edit");
+
+    const formula = await prisma.formula.findFirst({
+      where: { id: formulaId, organizationId: user.organizationId },
+      include: {
+        versions: {
+          orderBy: { versionNumber: "desc" },
+          include: { ingredients: true },
+        },
+      },
+    });
+
+    if (!formula) return { success: false, error: "Formula not found." };
+
+    const sourceVersion = formula.versions.find((v) => v.id === sourceVersionId);
+    if (!sourceVersion) return { success: false, error: "Source version to revert from not found." };
+
+    const highestVersionNum = formula.versions.reduce((max, v) => Math.max(max, v.versionNumber), 0);
+    const nextVersionNum = highestVersionNum + 1;
+
+    const newVersion = await prisma.$transaction(async (tx) => {
+      const createdVersion = await tx.formulaVersion.create({
+        data: {
+          formulaId,
+          versionNumber: nextVersionNum,
+          targetWeight: sourceVersion.targetWeight,
+          weightUnit: sourceVersion.weightUnit,
+          concentration: sourceVersion.concentration,
+          status: "DRAFT",
+          notes: `Reverted from v${sourceVersion.versionNumber}`,
+          createdById: user.id,
+        },
+      });
+
+      if (sourceVersion.ingredients.length > 0) {
+        await tx.formulaIngredient.createMany({
+          data: sourceVersion.ingredients.map((i) => ({
+            formulaVersionId: createdVersion.id,
+            ingredientId: i.ingredientId,
+            quantity: i.quantity,
+            unit: i.unit,
+            sortOrder: i.sortOrder,
+            notes: i.notes,
+          })),
+        });
+      }
+
+      await tx.formula.update({
+        where: { id: formulaId },
+        data: { status: "DRAFT" },
+      });
+
+      await tx.auditLog.create({
+        data: {
+          organizationId: user.organizationId,
+          userId: user.id,
+          action: "VERSION_REVERTED",
+          entityType: "FormulaVersion",
+          entityId: createdVersion.id,
+          newValue: JSON.stringify({
+            newVersionNumber: nextVersionNum,
+            revertedFromVersion: sourceVersion.versionNumber,
+          }),
+        },
+      });
+
+      return createdVersion;
+    });
+
+    revalidatePath(`/formulas/${formulaId}`);
+    revalidatePath("/formulas");
+    return {
+      success: true,
+      data: { newVersionId: newVersion.id, versionNumber: nextVersionNum },
+    };
+  } catch (error) {
+    return { success: false, error: error instanceof Error ? error.message : "Failed to revert to version." };
+  }
+}
+

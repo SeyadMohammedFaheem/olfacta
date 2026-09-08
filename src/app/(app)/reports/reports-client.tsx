@@ -138,9 +138,10 @@ export function ReportsClient({ formulas, batches, ingredients }: ReportsClientP
         description="Generate, review, and export regulatory, formula, and production data"
       />
 
-      <div className="grid gap-6 sm:grid-cols-3">
+      {/* Reports Catalog Grid (12-column grid: 3 x 4 cols) */}
+      <div className="grid grid-cols-12 gap-6">
         {/* Formulation Catalog Card */}
-        <Card className="flex flex-col justify-between">
+        <Card className="flex flex-col justify-between col-span-12 md:col-span-4">
           <CardHeader className="pb-3">
             <div className="flex h-9 w-9 items-center justify-center rounded-md bg-primary/10 mb-2">
               <FileText className="h-5 w-5 text-primary" />
@@ -172,7 +173,7 @@ export function ReportsClient({ formulas, batches, ingredients }: ReportsClientP
         </Card>
 
         {/* Batch Production Log Card */}
-        <Card className="flex flex-col justify-between">
+        <Card className="flex flex-col justify-between col-span-12 md:col-span-4">
           <CardHeader className="pb-3">
             <div className="flex h-9 w-9 items-center justify-center rounded-md bg-primary/10 mb-2">
               <Factory className="h-5 w-5 text-primary" />
@@ -204,7 +205,7 @@ export function ReportsClient({ formulas, batches, ingredients }: ReportsClientP
         </Card>
 
         {/* Raw Material Master Card */}
-        <Card className="flex flex-col justify-between">
+        <Card className="flex flex-col justify-between col-span-12 md:col-span-4">
           <CardHeader className="pb-3">
             <div className="flex h-9 w-9 items-center justify-center rounded-md bg-primary/10 mb-2">
               <Beaker className="h-5 w-5 text-primary" />

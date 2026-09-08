@@ -1,13 +1,16 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import Link from "next/link";
-import { ArrowLeft, GitCompare, ArrowRight, Plus, Minus, Equal } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { ArrowLeft, GitCompare, ArrowRight, Plus, Minus, Equal, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { calculatePercentage, decimalRound } from "@/lib/calculations";
+import { revertToFormulaVersion } from "@/services/formula/actions";
+import { toast } from "sonner";
 
 interface VersionCompareClientProps {
   formula: any;
@@ -16,6 +19,8 @@ interface VersionCompareClientProps {
 }
 
 export function VersionCompareClient({ formula, initialV1, initialV2 }: VersionCompareClientProps) {
+  const router = useRouter();
+  const [isPending, startTransition] = useTransition();
   const versions = formula.versions || [];
 
   const defaultV1 = initialV1 || versions[versions.length - 1]?.versionNumber || 1;
@@ -23,6 +28,19 @@ export function VersionCompareClient({ formula, initialV1, initialV2 }: VersionC
 
   const [v1Num, setV1Num] = useState<number>(defaultV1);
   const [v2Num, setV2Num] = useState<number>(defaultV2);
+
+  const handleRevertToVersion = (versionId: string, versionNumber: number) => {
+    startTransition(async () => {
+      const result = await revertToFormulaVersion(formula.id, versionId);
+      if (result.success && result.data) {
+        toast.success(`Restored formulation from v${versionNumber}! Created v${result.data.versionNumber} as active draft.`);
+        router.push(`/formulas/${formula.id}`);
+        router.refresh();
+      } else {
+        toast.error(result.error || `Failed to restore v${versionNumber}`);
+      }
+    });
+  };
 
   const versionA = versions.find((v: any) => v.versionNumber === v1Num) || versions[0];
   const versionB = versions.find((v: any) => v.versionNumber === v2Num) || versions[0];
@@ -140,6 +158,20 @@ export function VersionCompareClient({ formula, initialV1, initialV2 }: VersionC
                 </SelectContent>
               </Select>
               <StatusBadge status={versionB?.status || "DRAFT"} />
+            </div>
+
+            {/* Quick Revert Actions */}
+            <div className="flex items-center gap-2 border-t sm:border-t-0 sm:border-l sm:pl-4 pt-3 sm:pt-0 w-full sm:w-auto justify-end">
+              <Button
+                variant="outline"
+                size="sm"
+                className="text-xs gap-1.5"
+                disabled={isPending || !versionA}
+                onClick={() => handleRevertToVersion(versionA.id, versionA.versionNumber)}
+              >
+                <RotateCcw className="h-3.5 w-3.5 text-primary" />
+                Restore v{versionA?.versionNumber} as Draft
+              </Button>
             </div>
           </div>
         </CardContent>

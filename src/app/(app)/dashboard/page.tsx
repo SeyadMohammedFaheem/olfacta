@@ -104,19 +104,16 @@ export default async function DashboardPage() {
         </div>
       </div>
 
-      {/* ─── Premium Metric Stat Cards Strip ─────────────────────────── */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      {/* ─── Premium Metric Stat Cards Strip (12-column grid: 4 x 3 cols, 24px gap) ─── */}
+      <div className="grid grid-cols-12 gap-6">
         {/* Card 1: Formulas */}
-        <Link href="/formulas" className="group block">
+        <Link href="/formulas" className="group block col-span-12 sm:col-span-6 lg:col-span-3">
           <Card className="transition-all duration-200 hover:border-primary/40 border h-full">
             <CardContent className="p-5 flex flex-col justify-between h-full">
-              <div className="flex items-center justify-between">
+              <div>
                 <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                   Formulas in Lab
                 </span>
-                <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 text-primary group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
-                  <FlaskConical className="h-4.5 w-4.5" />
-                </div>
               </div>
               <div className="mt-2">
                 <p className="text-3xl font-bold font-mono tracking-tight text-foreground">{totalFormulas}</p>
@@ -133,16 +130,13 @@ export default async function DashboardPage() {
         </Link>
 
         {/* Card 2: Active Batches */}
-        <Link href="/batches" className="group block">
+        <Link href="/batches" className="group block col-span-12 sm:col-span-6 lg:col-span-3">
           <Card className="transition-all duration-200 hover:border-blue-500/40 border h-full">
             <CardContent className="p-5 flex flex-col justify-between h-full">
-              <div className="flex items-center justify-between">
+              <div>
                 <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                   Active Batches
                 </span>
-                <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-500/10 text-blue-600 group-hover:bg-blue-600 group-hover:text-white transition-colors">
-                  <Factory className="h-4.5 w-4.5" />
-                </div>
               </div>
               <div className="mt-2">
                 <p className="text-3xl font-bold font-mono tracking-tight text-foreground">{activeBatches}</p>
@@ -155,16 +149,13 @@ export default async function DashboardPage() {
         </Link>
 
         {/* Card 3: Violations */}
-        <Link href="/compliance" className="group block">
+        <Link href="/compliance" className="group block col-span-12 sm:col-span-6 lg:col-span-3">
           <Card className={`transition-all duration-200 border h-full ${violations > 0 ? "hover:border-violation/40 bg-violation-bg/15" : ""}`}>
             <CardContent className="p-5 flex flex-col justify-between h-full">
-              <div className="flex items-center justify-between">
+              <div>
                 <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                   Safety Violations
                 </span>
-                <div className={`flex h-9 w-9 items-center justify-center rounded-lg ${violations > 0 ? "bg-violation/15 text-violation group-hover:bg-violation group-hover:text-white" : "bg-muted text-muted-foreground"} transition-colors`}>
-                  <XCircle className="h-4.5 w-4.5" />
-                </div>
               </div>
               <div className="mt-2">
                 <p className={`text-3xl font-bold font-mono tracking-tight ${violations > 0 ? "text-violation" : "text-foreground"}`}>
@@ -179,16 +170,13 @@ export default async function DashboardPage() {
         </Link>
 
         {/* Card 4: Warnings */}
-        <Link href="/compliance" className="group block">
+        <Link href="/compliance" className="group block col-span-12 sm:col-span-6 lg:col-span-3">
           <Card className="transition-all duration-200 hover:border-warning/40 border h-full">
             <CardContent className="p-5 flex flex-col justify-between h-full">
-              <div className="flex items-center justify-between">
+              <div>
                 <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                   Safety Warnings
                 </span>
-                <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-warning/15 text-warning group-hover:bg-warning group-hover:text-warning-foreground transition-colors">
-                  <AlertTriangle className="h-4.5 w-4.5" />
-                </div>
               </div>
               <div className="mt-2">
                 <p className={`text-3xl font-bold font-mono tracking-tight ${warnings > 0 ? "text-warning" : "text-foreground"}`}>
@@ -203,10 +191,10 @@ export default async function DashboardPage() {
         </Link>
       </div>
 
-      {/* ─── Main Content Tables Grid ────────────────────────────────── */}
-      <div className="grid gap-6 lg:grid-cols-2">
+      {/* ─── Main Content Tables Grid (12-column grid: 2 x 6 cols) ───── */}
+      <div className="grid grid-cols-12 gap-6">
         {/* Recent Formulas */}
-        <Card className="border">
+        <Card className="border col-span-12 lg:col-span-6">
           <CardHeader className="pb-3 border-b bg-muted/20 flex flex-row items-center justify-between">
             <div>
               <CardTitle className="text-sm font-semibold flex items-center gap-2">
@@ -274,8 +262,8 @@ export default async function DashboardPage() {
           </CardContent>
         </Card>
 
-        {/* Active Batches */}
-        <Card className="border">
+        {/* Recent Batches */}
+        <Card className="border col-span-12 lg:col-span-6">
           <CardHeader className="pb-3 border-b bg-muted/20 flex flex-row items-center justify-between">
             <div>
               <CardTitle className="text-sm font-semibold flex items-center gap-2">

@@ -202,10 +202,10 @@ export default async function IngredientDetailPage({ params }: { params: Promise
         </div>
       </div>
 
-      {/* ─── Detailed Grid Sections ─────────────────────────────────── */}
-      <div className="grid gap-6 md:grid-cols-2">
+      {/* ─── Detailed Grid Sections (12-column grid: 2 x 6 cols) ────── */}
+      <div className="grid grid-cols-12 gap-6">
         {/* Chemical & Olfactory Profile */}
-        <Card>
+        <Card className="col-span-12 lg:col-span-6">
           <CardHeader className="pb-3 border-b bg-muted/20">
             <CardTitle className="text-sm font-semibold flex items-center gap-2">
               <FlaskConical className="h-4 w-4 text-primary" /> Chemical & Physical Identity
@@ -247,7 +247,7 @@ export default async function IngredientDetailPage({ params }: { params: Promise
 
         {/* Accord / Blend Formula Composition (Mixing of What) */}
         {(parsedComposition.length > 0 || ingredient.materialType === "FRAGRANCE") && (
-          <Card className="md:col-span-2 border-primary/20 bg-primary/[0.01]">
+          <Card className="col-span-12 border-primary/20 bg-primary/[0.01]">
             <CardHeader className="pb-3 border-b bg-muted/20 flex flex-row items-center justify-between">
               <div className="space-y-0.5">
                 <CardTitle className="text-sm font-semibold flex items-center gap-2">
@@ -292,7 +292,7 @@ export default async function IngredientDetailPage({ params }: { params: Promise
         )}
 
         {/* Safety & Regulatory Rules */}
-        <Card>
+        <Card className="col-span-12 lg:col-span-6">
           <CardHeader className="pb-3 border-b bg-muted/20">
             <CardTitle className="text-sm font-semibold flex items-center gap-2">
               <ShieldCheck className="h-4 w-4 text-primary" /> Safety & Regulatory Rules ({ingredient.regulatoryRules?.length ?? 0})
@@ -337,7 +337,7 @@ export default async function IngredientDetailPage({ params }: { params: Promise
         </Card>
 
         {/* Commercial Suppliers & Sourcing */}
-        <Card>
+        <Card className="col-span-12 lg:col-span-6">
           <CardHeader className="pb-3 border-b bg-muted/20">
             <CardTitle className="text-sm font-semibold flex items-center gap-2">
               <Building2 className="h-4 w-4 text-primary" /> Sourcing & Suppliers ({ingredient.ingredientSuppliers?.length ?? 0})
@@ -373,7 +373,7 @@ export default async function IngredientDetailPage({ params }: { params: Promise
         </Card>
 
         {/* Formulas Using This Ingredient */}
-        <Card>
+        <Card className="col-span-12 lg:col-span-6">
           <CardHeader className="pb-3 border-b bg-muted/20">
             <CardTitle className="text-sm font-semibold flex items-center gap-2">
               <Layers className="h-4 w-4 text-primary" /> Used in Formulas ({uniqueFormulas.length})

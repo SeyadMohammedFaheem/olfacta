@@ -53,9 +53,10 @@ export default async function SettingsPage() {
         }
       />
 
-      <div className="grid gap-6 sm:grid-cols-2">
+      {/* Settings Grid (12-column grid: 2 x 6 cols) */}
+      <div className="grid grid-cols-12 gap-6">
         {/* Organization Info */}
-        <Card className="border-neutral-200 dark:border-neutral-800">
+        <Card className="border-neutral-200 dark:border-neutral-800 col-span-12 lg:col-span-6">
           <CardHeader className="pb-3">
             <div className="flex items-center gap-2">
               <Building2 className="h-4 w-4 text-primary" />
@@ -80,7 +81,7 @@ export default async function SettingsPage() {
         </Card>
 
         {/* Current User Session Info */}
-        <Card className="border-neutral-200 dark:border-neutral-800">
+        <Card className="border-neutral-200 dark:border-neutral-800 col-span-12 lg:col-span-6">
           <CardHeader className="pb-3">
             <div className="flex items-center gap-2">
               <Shield className="h-4 w-4 text-primary" />

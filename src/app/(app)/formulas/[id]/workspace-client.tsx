@@ -28,6 +28,7 @@ import {
   Search,
   X,
   Info,
+  RotateCcw,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { StatusBadge, ComplianceBadge, DemoBadge } from "@/components/ui/status-badge";
@@ -62,6 +63,8 @@ import {
   saveFormulaVersion,
   updateFormulaSetup,
   deleteFormula,
+  discardFormulaVersion,
+  revertToFormulaVersion,
 } from "@/services/formula/actions";
 import { searchIngredients, quickCreateOil, lookupMaterialApi } from "@/services/ingredient/actions";
 import {
@@ -89,14 +92,24 @@ interface FormulaWorkspaceClientProps {
   formula: any;
   rules: any[];
   user: SessionUser;
+  activeVersionId?: string;
 }
 
-export function FormulaWorkspaceClient({ formula, rules, user }: FormulaWorkspaceClientProps) {
+export function FormulaWorkspaceClient({ formula, rules, user, activeVersionId }: FormulaWorkspaceClientProps) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
-  const latestVersion = formula.versions[0];
+
+  // Selected or latest active version
+  const selectedVersion = activeVersionId
+    ? formula.versions.find((v: any) => v.id === activeVersionId) || formula.versions[0]
+    : formula.versions[0];
+  const latestVersion = selectedVersion;
   const isEditable = latestVersion?.status === "DRAFT";
   const canEdit = isEditable && hasPermission(user.role, "formula:edit");
+
+  // Discard & Revert Modal states
+  const [discardVersionDialog, setDiscardVersionDialog] = useState<any | null>(null);
+  const [revertVersionDialog, setRevertVersionDialog] = useState<any | null>(null);
 
   // Setup / Context state
   const [editSetupOpen, setEditSetupOpen] = useState(false);
@@ -257,6 +270,7 @@ export function FormulaWorkspaceClient({ formula, rules, user }: FormulaWorkspac
         ]);
         setDrawerOpen(false);
         setSearchQuery("");
+        setSaveStatus("unsaved");
         toast.success(`Added ${ingredient.name}`);
         router.refresh();
       } else {
@@ -360,14 +374,7 @@ export function FormulaWorkspaceClient({ formula, rules, user }: FormulaWorkspac
     quantitySaveRef.current = setTimeout(async () => {
       const item = localIngredients[index];
       if (item && !item.id.startsWith("temp-")) {
-        setSaveStatus("saving");
-        const res = await updateIngredientQuantity(item.id, value);
-        if (res.success) {
-          setSaveStatus("saved");
-        } else {
-          setSaveStatus("unsaved");
-          toast.error("Failed to auto-save quantity");
-        }
+        await updateIngredientQuantity(item.id, value);
       }
     }, 800);
   }, [localIngredients]);
@@ -378,6 +385,27 @@ export function FormulaWorkspaceClient({ formula, rules, user }: FormulaWorkspac
     handleQuantityChange(index, computedGrams);
   }, [handleQuantityChange, targetBatchWeight]);
 
+  // Auto-fill Remaining: batch carrier or solvent
+  const handleFillRemainingBatch = useCallback((index: number) => {
+    const otherIngredientsSum = localIngredients
+      .filter((_: any, i: number) => i !== index)
+      .reduce((sum: number, item: any) => sum + (item.quantity || 0), 0);
+    const remainder = Math.max(0, decimalRound(targetBatchWeight - otherIngredientsSum, 2));
+    handleQuantityChange(index, remainder);
+    toast.success(`Set ${localIngredients[index]?.name || "ingredient"} to remainder (${remainder} g)`);
+  }, [localIngredients, targetBatchWeight, handleQuantityChange]);
+
+  // Auto-fill Remaining: fragrance concentrate balance
+  const handleFillRemainingConcentrate = useCallback((index: number) => {
+    const fragranceTypes = ["FRAGRANCE", "ESSENTIAL_OIL", "AROMA_CHEMICAL", "EXTRACT"];
+    const otherFragranceSum = localIngredients
+      .filter((item: any, i: number) => i !== index && fragranceTypes.includes(item.materialType))
+      .reduce((sum: number, item: any) => sum + (item.quantity || 0), 0);
+    const remainder = Math.max(0, decimalRound(targetConcentrateGrams - otherFragranceSum, 2));
+    handleQuantityChange(index, remainder);
+    toast.success(`Balanced concentrate with ${localIngredients[index]?.name || "ingredient"} (${remainder} g)`);
+  }, [localIngredients, targetConcentrateGrams, handleQuantityChange]);
+
   // Apply Safe Maximum Allowed action from finding
   const handleApplyMaximum = useCallback((ingredientId: string, maxPct: number) => {
     const index = localIngredients.findIndex((i: any) => i.ingredientId === ingredientId);
@@ -385,6 +413,7 @@ export function FormulaWorkspaceClient({ formula, rules, user }: FormulaWorkspac
 
     handlePercentageChange(index, maxPct);
     setSelectedFinding(null);
+    setSaveStatus("unsaved");
     toast.success(`Dosage adjusted to legal limit (${maxPct}%)`);
   }, [localIngredients, handlePercentageChange]);
 
@@ -395,6 +424,7 @@ export function FormulaWorkspaceClient({ formula, rules, user }: FormulaWorkspac
 
     setLocalIngredients((prev: any[]) => prev.filter((_: any, i: number) => i !== index));
     setConfirmDialog(null);
+    setSaveStatus("unsaved");
 
     if (!item.id.startsWith("temp-")) {
       startTransition(async () => {
@@ -476,9 +506,40 @@ export function FormulaWorkspaceClient({ formula, rules, user }: FormulaWorkspac
       const result = await createNewVersion(formula.id);
       if (result.success && result.data) {
         toast.success("New version created");
+        router.push(`/formulas/${formula.id}`);
         router.refresh();
       } else {
         toast.error(result.error || "Failed to create new version");
+      }
+    });
+  }, [formula.id, router]);
+
+  // Discard a specific version
+  const handleDiscardVersion = useCallback(async (versionId: string, versionNumber: number) => {
+    startTransition(async () => {
+      const result = await discardFormulaVersion(formula.id, versionId);
+      if (result.success) {
+        toast.success(`Version v${versionNumber} discarded.`);
+        setDiscardVersionDialog(null);
+        router.push(`/formulas/${formula.id}`);
+        router.refresh();
+      } else {
+        toast.error(result.error || `Failed to discard v${versionNumber}`);
+      }
+    });
+  }, [formula.id, router]);
+
+  // Revert back to a specific previous version
+  const handleRevertVersion = useCallback(async (versionId: string, versionNumber: number) => {
+    startTransition(async () => {
+      const result = await revertToFormulaVersion(formula.id, versionId);
+      if (result.success && result.data) {
+        toast.success(`Successfully reverted to v${versionNumber}! Created v${result.data.versionNumber} as active draft.`);
+        setRevertVersionDialog(null);
+        router.push(`/formulas/${formula.id}`);
+        router.refresh();
+      } else {
+        toast.error(result.error || `Failed to revert to v${versionNumber}`);
       }
     });
   }, [formula.id, router]);
@@ -537,7 +598,44 @@ export function FormulaWorkspaceClient({ formula, rules, user }: FormulaWorkspac
             <div>
               <div className="flex items-center gap-2">
                 <h1 className="text-base font-semibold">{formula.name}</h1>
-                <span className="text-xs text-muted-foreground font-mono">v{latestVersion?.versionNumber ?? 1}</span>
+                
+                {/* Interactive Version Selector Dropdown */}
+                {formula.versions?.length > 1 ? (
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <button
+                        type="button"
+                        className="flex items-center gap-1 text-xs font-mono font-medium px-2 py-0.5 rounded border bg-muted/40 hover:bg-muted text-foreground transition-colors cursor-pointer"
+                        title="Switch formula version"
+                      >
+                        <span>v{latestVersion?.versionNumber ?? 1}</span>
+                        <ChevronDown className="h-3 w-3 text-muted-foreground" />
+                      </button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="start" className="w-48">
+                      <div className="px-2 py-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                        Select Version
+                      </div>
+                      {formula.versions.map((ver: any) => (
+                        <DropdownMenuItem
+                          key={ver.id}
+                          className="flex items-center justify-between text-xs cursor-pointer font-mono"
+                          onClick={() => {
+                            router.push(`/formulas/${formula.id}?versionId=${ver.id}`);
+                          }}
+                        >
+                          <span className={ver.id === latestVersion?.id ? "font-bold text-primary" : ""}>
+                            v{ver.versionNumber} {ver.id === latestVersion?.id ? "✓" : ""}
+                          </span>
+                          <StatusBadge status={ver.status} />
+                        </DropdownMenuItem>
+                      ))}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                ) : (
+                  <span className="text-xs text-muted-foreground font-mono">v{latestVersion?.versionNumber ?? 1}</span>
+                )}
+
                 <StatusBadge status={latestVersion?.status ?? formula.status} />
               </div>
             </div>
@@ -554,16 +652,36 @@ export function FormulaWorkspaceClient({ formula, rules, user }: FormulaWorkspac
               </Button>
             )}
 
-            {/* Save status */}
-            <span className="text-xs text-muted-foreground mr-1">
-              {saveStatus === "saving" && "Saving..."}
-              {saveStatus === "saved" && "Saved"}
-              {saveStatus === "unsaved" && "Unsaved changes"}
-            </span>
+            {/* If already saved, show only Saved text */}
+            {canEdit && saveStatus === "saved" && (
+              <span className="text-xs text-muted-foreground font-medium px-2 py-1">
+                Saved
+              </span>
+            )}
 
-            {canEdit && (
-              <Button variant="outline" size="sm" onClick={handleSave} disabled={isPending}>
-                <Save className="mr-1 h-3.5 w-3.5" /> Save
+            {/* If NOT saved already (unsaved or saving), show the Save button */}
+            {canEdit && saveStatus !== "saved" && (
+              <Button
+                variant="default"
+                size="sm"
+                onClick={handleSave}
+                disabled={isPending || saveStatus === "saving"}
+              >
+                <Save className="mr-1.5 h-3.5 w-3.5" />
+                {saveStatus === "saving" ? "Saving..." : "Save"}
+              </Button>
+            )}
+
+            {/* Revert to this version (if viewing an older approved version) */}
+            {latestVersion?.status !== "DRAFT" && hasPermission(user.role, "formula:edit") && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="text-primary hover:text-primary hover:bg-primary/10 border-primary/30"
+                onClick={() => setRevertVersionDialog(latestVersion)}
+                disabled={isPending}
+              >
+                <RotateCcw className="mr-1 h-3.5 w-3.5" /> Restore v{latestVersion?.versionNumber}
               </Button>
             )}
 
@@ -615,7 +733,7 @@ export function FormulaWorkspaceClient({ formula, rules, user }: FormulaWorkspac
                   setEditSetupOpen(true);
                 }}
               >
-                <Settings className="mr-1.5 h-3.5 w-3.5" /> Formula Settings & Danger Zone
+                <Settings className="mr-1.5 h-3.5 w-3.5" /> Formula Settings
               </Button>
             )}
           </div>
@@ -644,27 +762,6 @@ export function FormulaWorkspaceClient({ formula, rules, user }: FormulaWorkspac
               ))}
             </div>
           </div>
-
-          {canEdit && (
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-6 text-xs text-muted-foreground hover:text-foreground px-2"
-              onClick={() => {
-                setSetupForm({
-                  name: formula.name,
-                  targetWeight: targetBatchWeight,
-                  weightUnit: latestVersion?.weightUnit ?? "g",
-                  concentration: targetConcentration,
-                  market: formula.market ?? "General",
-                  description: formula.description ?? "",
-                });
-                setEditSetupOpen(true);
-              }}
-            >
-              <Settings className="mr-1 h-3 w-3" /> Formula Settings
-            </Button>
-          )}
         </div>
       </div>
 
@@ -701,7 +798,25 @@ export function FormulaWorkspaceClient({ formula, rules, user }: FormulaWorkspac
               </span>
             </div>
             <div className="border-l pl-4">
-              <span className="text-[11px] text-muted-foreground block">Base Carrier Needed</span>
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-[11px] text-muted-foreground block">Base Carrier Needed</span>
+                {canEdit && (() => {
+                  const solventIdx = localIngredients.findIndex((i: any) => i.materialType === "SOLVENT" || /alcohol|dpg|solvent|carrier/i.test(i.name));
+                  if (solventIdx !== -1) {
+                    return (
+                      <button
+                        type="button"
+                        onClick={() => handleFillRemainingBatch(solventIdx)}
+                        className="text-[10px] text-primary hover:underline font-sans cursor-pointer"
+                        title={`Auto-fill ${localIngredients[solventIdx].name} to balance formula`}
+                      >
+                        Auto-fill solvent
+                      </button>
+                    );
+                  }
+                  return null;
+                })()}
+              </div>
               <span className="font-semibold text-foreground">
                 {decimalRound(baseCarrierRequiredGrams, 1)} g ({100 - targetConcentration}%)
               </span>
@@ -720,7 +835,8 @@ export function FormulaWorkspaceClient({ formula, rules, user }: FormulaWorkspac
       <div className="flex flex-1 overflow-hidden">
         {/* Formulation Table */}
         <div className="flex-1 overflow-y-auto">
-          <div className="p-6 space-y-4">
+          {/* Sticky Section Header */}
+          <div className="sticky top-0 z-20 border-b bg-background/95 backdrop-blur-sm px-6 py-4">
             <div className="flex items-center justify-between">
               <div>
                 <h2 className="text-sm font-semibold tracking-tight">Formula Ingredients ({localIngredients.length})</h2>
@@ -735,12 +851,14 @@ export function FormulaWorkspaceClient({ formula, rules, user }: FormulaWorkspac
                 </Button>
               )}
             </div>
+          </div>
 
+          <div className="p-6 space-y-4 pt-4">
             {/* Table */}
             <div className="rounded-lg border bg-card overflow-hidden">
               <table className="w-full text-sm">
-                <thead>
-                  <tr className="text-left text-xs text-muted-foreground border-b bg-muted/20">
+                <thead className="sticky top-0 z-10 bg-card">
+                  <tr className="text-left text-xs text-muted-foreground border-b bg-muted/40">
                     <th className="px-4 py-2.5 w-8 font-medium">#</th>
                     <th className="px-4 py-2.5 font-medium">Ingredient</th>
                     <th className="px-4 py-2.5 font-medium">Type</th>
@@ -759,6 +877,12 @@ export function FormulaWorkspaceClient({ formula, rules, user }: FormulaWorkspac
                       ingredient.ingredientId,
                       complianceFindings
                     );
+                    const isSolvent = ingredient.materialType === "SOLVENT" || /alcohol|dpg|solvent|carrier/i.test(ingredient.name);
+                    const isFragranceMaterial = fragranceTypes.includes(ingredient.materialType);
+                    const otherIngredientsWeight = localIngredients
+                      .filter((_: any, i: number) => i !== index)
+                      .reduce((sum: number, item: any) => sum + (item.quantity || 0), 0);
+                    const batchRemainder = Math.max(0, decimalRound(targetBatchWeight - otherIngredientsWeight, 2));
 
                     return (
                       <tr
@@ -790,18 +914,45 @@ export function FormulaWorkspaceClient({ formula, rules, user }: FormulaWorkspac
                           {ingredient.materialType.replace(/_/g, " ")}
                         </td>
 
-                        {/* Editable Amount (g) */}
+                        {/* Editable Amount (g) with Auto-Fill Remainder */}
                         <td className="px-4 py-2">
                           {canEdit ? (
-                            <Input
-                              type="number"
-                              step="0.01"
-                              min="0"
-                              value={ingredient.quantity || ""}
-                              onChange={(e) => handleQuantityChange(index, parseFloat(e.target.value) || 0)}
-                              placeholder="0.00"
-                              className="h-8 font-mono text-sm"
-                            />
+                            <div className="space-y-1">
+                              <div className="flex items-center gap-1.5">
+                                <Input
+                                  type="number"
+                                  step="0.01"
+                                  min="0"
+                                  value={ingredient.quantity || ""}
+                                  onChange={(e) => handleQuantityChange(index, parseFloat(e.target.value) || 0)}
+                                  placeholder="0.00"
+                                  className="h-8 font-mono text-sm"
+                                />
+                              </div>
+                              {/* Quick Auto-fill Remainder button for Solvents or underfilled items */}
+                              {isSolvent && batchRemainder > 0 && ingredient.quantity !== batchRemainder && (
+                                <button
+                                  type="button"
+                                  onClick={() => handleFillRemainingBatch(index)}
+                                  className="text-[10px] font-mono text-primary bg-primary/10 hover:bg-primary/20 px-1.5 py-0.5 rounded border border-primary/20 transition-colors cursor-pointer flex items-center gap-1 whitespace-nowrap"
+                                  title={`Fill remaining batch balance: ${batchRemainder} g`}
+                                >
+                                  <span>Fill remainder:</span>
+                                  <span className="font-semibold">{batchRemainder} g</span>
+                                </button>
+                              )}
+                              {!isSolvent && isFragranceMaterial && concentrateRemainingGrams > 0 && ingredient.quantity === 0 && (
+                                <button
+                                  type="button"
+                                  onClick={() => handleFillRemainingConcentrate(index)}
+                                  className="text-[10px] font-mono text-muted-foreground hover:text-foreground bg-muted/50 hover:bg-muted px-1.5 py-0.5 rounded border transition-colors cursor-pointer flex items-center gap-1 whitespace-nowrap"
+                                  title={`Fill remaining concentrate: ${concentrateRemainingGrams} g`}
+                                >
+                                  <span>Fill concentrate:</span>
+                                  <span className="font-semibold">{decimalRound(concentrateRemainingGrams, 1)} g</span>
+                                </button>
+                              )}
+                            </div>
                           ) : (
                             <span className="font-mono text-sm">{decimalRound(ingredient.quantity, 2)} g</span>
                           )}
@@ -950,43 +1101,61 @@ export function FormulaWorkspaceClient({ formula, rules, user }: FormulaWorkspac
 
         {/* ─── Multi-Market Validation & Findings Side Panel ──────────── */}
         <div className="w-80 border-l bg-card overflow-y-auto shrink-0 hidden lg:block">
-          <div className="p-4 border-b">
+          <div className="sticky top-0 z-20 bg-card border-b p-4 backdrop-blur-sm">
             <h3 className="text-sm font-semibold flex items-center gap-2">
               <ShieldCheck className="h-4 w-4 text-primary" /> Multi-Market Safety Check
             </h3>
           </div>
 
           {/* Market Selection Tabs */}
-          <div className="p-3 border-b bg-muted/20">
-            <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground block mb-2">
-              Filter by Market
-            </span>
-            <div className="flex flex-wrap gap-1.5">
+          <div className="p-3.5 border-b bg-muted/20">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                Filter by Market
+              </span>
+              <span className="text-[10px] text-muted-foreground font-mono">
+                {formulaMarkets.length} active
+              </span>
+            </div>
+            <div className="flex flex-wrap gap-1.5 p-1 bg-muted/40 rounded-lg border border-border/40">
               <button
                 type="button"
                 onClick={() => setSelectedMarketTab("ALL")}
-                className={`px-2 py-0.5 rounded text-xs font-medium transition-colors cursor-pointer ${
+                className={`flex-1 min-w-[75px] inline-flex items-center justify-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium transition-all cursor-pointer ${
                   selectedMarketTab === "ALL"
-                    ? "bg-primary text-primary-foreground font-semibold"
-                    : "bg-muted text-muted-foreground hover:bg-muted/80"
+                    ? "bg-card text-foreground font-semibold shadow-xs border border-border/80"
+                    : "text-muted-foreground hover:text-foreground hover:bg-card/50"
                 }`}
               >
-                All Markets ({complianceFindings.length})
+                <span>All Markets</span>
+                <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-mono font-normal ${
+                  selectedMarketTab === "ALL" ? "bg-primary/10 text-primary font-bold" : "bg-muted text-muted-foreground"
+                }`}>
+                  {complianceFindings.length}
+                </span>
               </button>
-              {formulaMarkets.map((m) => (
-                <button
-                  key={m}
-                  type="button"
-                  onClick={() => setSelectedMarketTab(m)}
-                  className={`px-2 py-0.5 rounded text-xs font-medium transition-colors cursor-pointer ${
-                    selectedMarketTab === m
-                      ? "bg-primary text-primary-foreground font-semibold"
-                      : "bg-muted text-muted-foreground hover:bg-muted/80"
-                  }`}
-                >
-                  {m}
-                </button>
-              ))}
+              {formulaMarkets.map((m) => {
+                const count = complianceFindings.filter((f) => !f.market || f.market === m || f.market === "Global").length;
+                return (
+                  <button
+                    key={m}
+                    type="button"
+                    onClick={() => setSelectedMarketTab(m)}
+                    className={`inline-flex items-center justify-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium transition-all cursor-pointer ${
+                      selectedMarketTab === m
+                        ? "bg-card text-foreground font-semibold shadow-xs border border-border/80"
+                        : "text-muted-foreground hover:text-foreground hover:bg-card/50"
+                    }`}
+                  >
+                    <span>{m}</span>
+                    <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-mono font-normal ${
+                      selectedMarketTab === m ? "bg-primary/10 text-primary font-bold" : "bg-muted text-muted-foreground"
+                    }`}>
+                      {count}
+                    </span>
+                  </button>
+                );
+              })}
             </div>
           </div>
 
@@ -1061,19 +1230,88 @@ export function FormulaWorkspaceClient({ formula, rules, user }: FormulaWorkspac
 
           {/* Version Timeline */}
           <div className="p-4 border-t">
-            <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2.5">
-              Version Snapshots
-            </h4>
+            <div className="flex items-center justify-between mb-2.5">
+              <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                Version Snapshots
+              </h4>
+              {formula.versions?.length > 1 && (
+                <Link
+                  href={`/formulas/${formula.id}/compare`}
+                  className="text-[11px] text-primary hover:underline flex items-center gap-1 font-medium"
+                >
+                  <GitBranch className="h-3 w-3" /> Compare
+                </Link>
+              )}
+            </div>
+
             <div className="space-y-2">
-              {formula.versions.map((version: any) => (
-                <div key={version.id} className="flex items-center justify-between text-xs">
-                  <div className="flex items-center gap-1.5">
-                    <Clock className="h-3 w-3 text-muted-foreground" />
-                    <span className="font-medium font-mono">v{version.versionNumber}</span>
+              {formula.versions.map((version: any) => {
+                const isCurrent = version.id === latestVersion?.id;
+                const canDiscardThis = formula.versions.length > 1 && version.status === "DRAFT" && hasPermission(user.role, "formula:edit");
+                const canRestoreThis = !isCurrent && hasPermission(user.role, "formula:edit");
+
+                return (
+                  <div
+                    key={version.id}
+                    className={`p-2 rounded-lg border text-xs transition-all ${
+                      isCurrent
+                        ? "border-primary/50 bg-primary/[0.04] shadow-xs"
+                        : "border-border/60 bg-muted/10 hover:bg-muted/30"
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <button
+                        type="button"
+                        onClick={() => router.push(`/formulas/${formula.id}?versionId=${version.id}`)}
+                        className="flex items-center gap-1.5 font-medium font-mono text-left cursor-pointer hover:text-primary transition-colors"
+                      >
+                        <Clock className="h-3 w-3 text-muted-foreground" />
+                        <span>v{version.versionNumber}</span>
+                        {isCurrent && (
+                          <span className="text-[10px] font-sans px-1.5 py-0.2 rounded bg-primary/10 text-primary font-semibold">
+                            Active
+                          </span>
+                        )}
+                      </button>
+                      <StatusBadge status={version.status} />
+                    </div>
+
+                    {/* Action buttons for this specific version */}
+                    <div className="flex items-center justify-between mt-2 pt-1.5 border-t border-border/40 text-[11px]">
+                      <button
+                        type="button"
+                        onClick={() => router.push(`/formulas/${formula.id}?versionId=${version.id}`)}
+                        className={`hover:underline cursor-pointer ${isCurrent ? "text-primary font-semibold" : "text-muted-foreground"}`}
+                      >
+                        {isCurrent ? "Viewing active" : "View ingredients →"}
+                      </button>
+
+                      <div className="flex items-center gap-1">
+                        {canRestoreThis && (
+                          <button
+                            type="button"
+                            onClick={() => setRevertVersionDialog(version)}
+                            className="px-1.5 py-0.5 rounded text-[10px] text-primary hover:bg-primary/10 transition-colors cursor-pointer flex items-center gap-0.5 font-medium"
+                            title={`Restore formulation from v${version.versionNumber}`}
+                          >
+                            <RotateCcw className="h-2.5 w-2.5" /> Revert to this
+                          </button>
+                        )}
+                        {canDiscardThis && (
+                          <button
+                            type="button"
+                            onClick={() => setDiscardVersionDialog(version)}
+                            className="px-1.5 py-0.5 rounded text-[10px] text-destructive hover:bg-destructive/10 transition-colors cursor-pointer flex items-center gap-0.5"
+                            title={`Discard draft v${version.versionNumber}`}
+                          >
+                            <Trash2 className="h-2.5 w-2.5" /> Discard
+                          </button>
+                        )}
+                      </div>
+                    </div>
                   </div>
-                  <StatusBadge status={version.status} />
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         </div>
@@ -1579,28 +1817,31 @@ export function FormulaWorkspaceClient({ formula, rules, user }: FormulaWorkspac
               />
             </div>
 
-            {/* ─── GitHub-style Danger Zone ──────────────────────────── */}
-            {hasPermission(user.role, "formula:delete") && (
-              <div className="pt-3 border-t border-destructive/20">
-                <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-3.5 flex items-center justify-between gap-3">
+            {/* ─── Danger Zone: Discard Current Draft Version (if applicable) ──────────────────────────── */}
+            {formula.versions.length > 1 && latestVersion?.status === "DRAFT" && hasPermission(user.role, "formula:edit") && (
+              <div className="pt-3 border-t border-destructive/20 space-y-2">
+                <span className="text-[11px] font-semibold uppercase tracking-wider text-destructive block">
+                  Danger Zone
+                </span>
+                <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-3 flex items-center justify-between gap-3">
                   <div>
-                    <p className="text-xs font-semibold text-destructive">Danger Zone</p>
+                    <p className="text-xs font-semibold text-destructive">Discard Draft (v{latestVersion.versionNumber})</p>
                     <p className="text-[11px] text-muted-foreground">
-                      Permanently delete this formula and all versions.
+                      Delete this draft version and revert formula to the previous version.
                     </p>
                   </div>
                   <Button
                     type="button"
-                    variant="destructive"
+                    variant="outline"
                     size="sm"
-                    className="text-xs"
+                    className="text-xs border-destructive/40 text-destructive hover:bg-destructive/10 shrink-0"
                     onClick={() => {
                       setEditSetupOpen(false);
-                      setDeleteConfirmInput("");
-                      setDeleteFormulaOpen(true);
+                      setDiscardVersionDialog(latestVersion);
                     }}
                   >
-                    Delete Formula...
+                    <Trash2 className="mr-1.5 h-3.5 w-3.5 text-destructive" />
+                    Discard v{latestVersion.versionNumber}
                   </Button>
                 </div>
               </div>
@@ -1632,6 +1873,95 @@ export function FormulaWorkspaceClient({ formula, rules, user }: FormulaWorkspac
               <Button variant="outline" onClick={() => setConfirmDialog(null)}>Cancel</Button>
               <Button variant="destructive" onClick={() => handleRemoveIngredient(parseInt(confirmDialog.id!))}>
                 Remove
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
+
+      {/* ─── Discard Specific Version Dialog ────────────────────────── */}
+      {discardVersionDialog && (
+        <Dialog open={!!discardVersionDialog} onOpenChange={() => setDiscardVersionDialog(null)}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader className="pb-3 border-b">
+              <DialogTitle className="flex items-center gap-2 text-destructive">
+                <Trash2 className="h-5 w-5" />
+                <span>Discard Draft Version v{discardVersionDialog.versionNumber}</span>
+              </DialogTitle>
+              <DialogDescription className="text-xs text-muted-foreground mt-1">
+                Are you sure you want to discard this draft? This will permanently delete v{discardVersionDialog.versionNumber} and return the formula to its previous version.
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="py-3 text-xs text-muted-foreground space-y-2">
+              <p>
+                • This version is currently in <strong className="text-foreground uppercase">{discardVersionDialog.status}</strong> status.
+              </p>
+              <p>
+                • All raw material quantities and adjustments made in v{discardVersionDialog.versionNumber} will be deleted.
+              </p>
+            </div>
+
+            <DialogFooter className="gap-2 pt-2 border-t">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setDiscardVersionDialog(null)}
+                disabled={isPending}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="button"
+                variant="destructive"
+                onClick={() => handleDiscardVersion(discardVersionDialog.id, discardVersionDialog.versionNumber)}
+                loading={isPending}
+              >
+                Discard Version v{discardVersionDialog.versionNumber}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
+
+      {/* ─── Revert / Restore Version Dialog ─────────────────────────── */}
+      {revertVersionDialog && (
+        <Dialog open={!!revertVersionDialog} onOpenChange={() => setRevertVersionDialog(null)}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader className="pb-3 border-b">
+              <DialogTitle className="flex items-center gap-2 text-primary">
+                <RotateCcw className="h-5 w-5" />
+                <span>Revert to Version v{revertVersionDialog.versionNumber}</span>
+              </DialogTitle>
+              <DialogDescription className="text-xs text-muted-foreground mt-1">
+                Restore formulation from snapshot v{revertVersionDialog.versionNumber}.
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="py-3 text-xs text-muted-foreground space-y-2">
+              <p>
+                This will create a <strong className="text-foreground">new active DRAFT version</strong> matching the exact ingredients, proportions, batch weight, and concentration of <strong className="text-foreground font-mono">v{revertVersionDialog.versionNumber}</strong>.
+              </p>
+              <p>
+                None of your past versions or batch histories will be lost.
+              </p>
+            </div>
+
+            <DialogFooter className="gap-2 pt-2 border-t">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setRevertVersionDialog(null)}
+                disabled={isPending}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="button"
+                onClick={() => handleRevertVersion(revertVersionDialog.id, revertVersionDialog.versionNumber)}
+                loading={isPending}
+              >
+                Restore Formulation as New Draft
               </Button>
             </DialogFooter>
           </DialogContent>

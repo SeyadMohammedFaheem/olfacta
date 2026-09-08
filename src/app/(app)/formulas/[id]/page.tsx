@@ -6,8 +6,15 @@ import { redirect } from "next/navigation";
 export const dynamic = "force-dynamic";
 export const metadata = { title: "Formula Workspace — Olfacta" };
 
-export default async function FormulaWorkspacePage({ params }: { params: Promise<{ id: string }> }) {
+export default async function FormulaWorkspacePage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ id: string }>;
+  searchParams: Promise<{ versionId?: string }>;
+}) {
   const { id } = await params;
+  const { versionId } = await searchParams;
   const user = await getSession();
   if (!user) redirect("/login");
 
@@ -31,6 +38,8 @@ export default async function FormulaWorkspacePage({ params }: { params: Promise
       formula={formula}
       rules={rules}
       user={user}
+      activeVersionId={versionId}
     />
   );
 }
+

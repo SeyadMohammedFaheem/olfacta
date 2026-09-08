@@ -36,8 +36,8 @@ export function TopBar({ user }: TopBarProps) {
             <Search className="h-4 w-4" />
             <span>Search anything...</span>
           </span>
-          <kbd className="pointer-events-none rounded border bg-background px-1.5 py-0.5 font-mono text-[10px] font-medium text-muted-foreground">
-            Ctrl+K
+          <kbd className="pointer-events-none rounded border bg-background px-2 py-0.5 font-mono text-[11px] font-medium text-muted-foreground">
+            /
           </kbd>
         </button>
         <CommandPalette open={paletteOpen} onOpenChange={setPaletteOpen} />
@@ -172,8 +172,8 @@ export function TopBar({ user }: TopBarProps) {
                   <Command className="h-4 w-4 text-muted-foreground" />
                   <span>Search Palette</span>
                 </span>
-                <kbd className="text-[10px] font-mono text-muted-foreground bg-muted px-1.5 py-0.5 rounded border">
-                  Ctrl+K
+                <kbd className="text-[11px] font-mono text-muted-foreground bg-muted px-2 py-0.5 rounded border">
+                  /
                 </kbd>
               </DropdownMenuItem>
             </div>
