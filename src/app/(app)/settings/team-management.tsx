@@ -346,24 +346,25 @@ export function TeamManagement({ members, currentUser }: TeamManagementProps) {
                           {Object.entries(roleDescriptions).map(([roleKey, meta]) => {
                             const isSelected = inviteRole === roleKey;
                             return (
-                              <button
+                              <Button
                                 key={roleKey}
                                 type="button"
+                                variant="outline"
                                 onClick={() => setInviteRole(roleKey as Role)}
-                                className={`p-2.5 rounded-lg border text-left transition-all ${
+                                className={`h-auto p-2.5 rounded-lg border text-left flex flex-col items-stretch justify-start font-normal whitespace-normal transition-all ${
                                   isSelected
                                     ? "border-neutral-950 bg-neutral-50 dark:border-white dark:bg-neutral-900 ring-1 ring-neutral-950 dark:ring-white"
                                     : "border-neutral-200 hover:border-neutral-300 dark:border-neutral-800"
                                 }`}
                               >
-                                <div className="flex items-center justify-between">
+                                <div className="flex items-center justify-between w-full">
                                   <span className="text-xs font-semibold">{meta.label}</span>
                                   {isSelected && <Check className="h-3.5 w-3.5 text-primary" />}
                                 </div>
                                 <p className="text-[10px] text-neutral-500 mt-1 line-clamp-2 leading-tight">
                                   {meta.description}
                                 </p>
-                              </button>
+                              </Button>
                             );
                           })}
                         </div>
@@ -450,14 +451,16 @@ export function TeamManagement({ members, currentUser }: TeamManagementProps) {
                       {isAdmin && !isSelf ? (
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
-                            <button
+                            <Button
                               type="button"
+                              variant="outline"
+                              size="sm"
                               disabled={isPending}
-                              className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium border transition-colors cursor-pointer hover:opacity-85 ${roleMeta.badgeColor}`}
+                              className={`h-auto inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium border transition-colors cursor-pointer hover:opacity-85 ${roleMeta.badgeColor}`}
                             >
                               <span>{roleMeta.label}</span>
                               <ChevronsUpDown className="h-3 w-3 opacity-60" />
-                            </button>
+                            </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="start" className="w-56">
                             <DropdownMenuLabel className="text-xs text-muted-foreground">Change Role</DropdownMenuLabel>

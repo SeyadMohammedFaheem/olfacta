@@ -29,6 +29,7 @@ import {
   X,
   Info,
   RotateCcw,
+  FileText,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { StatusBadge, ComplianceBadge, DemoBadge } from "@/components/ui/status-badge";
@@ -479,7 +480,13 @@ export function FormulaWorkspaceClient({ formula, rules, user, activeVersionId }
     startTransition(async () => {
       const result = await approveFormula(formula.id);
       if (result.success) {
-        toast.success("Formula approved");
+        toast.success("Formula approved!", {
+          description: "Official formula dossier ready.",
+          action: {
+            label: "Save PDF",
+            onClick: () => window.open(`/formulas/${formula.id}/print?autoPrint=true`, "_blank"),
+          },
+        });
         router.refresh();
       } else {
         toast.error(result.error || "Failed to approve formula");
@@ -603,14 +610,16 @@ export function FormulaWorkspaceClient({ formula, rules, user, activeVersionId }
                 {formula.versions?.length > 1 ? (
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <button
+                      <Button
                         type="button"
-                        className="flex items-center gap-1 text-xs font-mono font-medium px-2 py-0.5 rounded border bg-muted/40 hover:bg-muted text-foreground transition-colors cursor-pointer"
+                        variant="outline"
+                        size="sm"
+                        className="h-6 flex items-center gap-1 text-xs font-mono font-medium px-2 py-0.5 rounded bg-muted/40 hover:bg-muted text-foreground cursor-pointer"
                         title="Switch formula version"
                       >
                         <span>v{latestVersion?.versionNumber ?? 1}</span>
                         <ChevronDown className="h-3 w-3 text-muted-foreground" />
-                      </button>
+                      </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="start" className="w-48">
                       <div className="px-2 py-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
@@ -700,6 +709,20 @@ export function FormulaWorkspaceClient({ formula, rules, user, activeVersionId }
                   Reject
                 </Button>
               </>
+            )}
+
+            {(latestVersion?.status === "APPROVED" || formula.status === "APPROVED") && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-1.5 border-emerald-600/30 text-emerald-700 hover:bg-emerald-50 hover:text-emerald-800 font-medium"
+                asChild
+              >
+                <a href={`/formulas/${formula.id}/print?versionId=${latestVersion?.id}`} target="_blank" rel="noreferrer">
+                  <FileText className="h-3.5 w-3.5 text-emerald-600" />
+                  Save PDF
+                </a>
+              </Button>
             )}
 
             {(latestVersion?.status === "APPROVED" || latestVersion?.status === "REJECTED") && hasPermission(user.role, "formula:edit") && (
@@ -804,14 +827,16 @@ export function FormulaWorkspaceClient({ formula, rules, user, activeVersionId }
                   const solventIdx = localIngredients.findIndex((i: any) => i.materialType === "SOLVENT" || /alcohol|dpg|solvent|carrier/i.test(i.name));
                   if (solventIdx !== -1) {
                     return (
-                      <button
+                      <Button
                         type="button"
+                        variant="link"
+                        size="sm"
                         onClick={() => handleFillRemainingBatch(solventIdx)}
-                        className="text-[10px] text-primary hover:underline font-sans cursor-pointer"
+                        className="h-auto p-0 text-[10px] text-primary hover:underline font-sans cursor-pointer"
                         title={`Auto-fill ${localIngredients[solventIdx].name} to balance formula`}
                       >
                         Auto-fill solvent
-                      </button>
+                      </Button>
                     );
                   }
                   return null;
@@ -931,26 +956,30 @@ export function FormulaWorkspaceClient({ formula, rules, user, activeVersionId }
                               </div>
                               {/* Quick Auto-fill Remainder button for Solvents or underfilled items */}
                               {isSolvent && batchRemainder > 0 && ingredient.quantity !== batchRemainder && (
-                                <button
+                                <Button
                                   type="button"
+                                  variant="outline"
+                                  size="sm"
                                   onClick={() => handleFillRemainingBatch(index)}
-                                  className="text-[10px] font-mono text-primary bg-primary/10 hover:bg-primary/20 px-1.5 py-0.5 rounded border border-primary/20 transition-colors cursor-pointer flex items-center gap-1 whitespace-nowrap"
+                                  className="h-5 text-[10px] font-mono text-primary bg-primary/10 hover:bg-primary/20 px-1.5 py-0.5 rounded border border-primary/20 transition-colors cursor-pointer flex items-center gap-1 whitespace-nowrap"
                                   title={`Fill remaining batch balance: ${batchRemainder} g`}
                                 >
                                   <span>Fill remainder:</span>
                                   <span className="font-semibold">{batchRemainder} g</span>
-                                </button>
+                                </Button>
                               )}
                               {!isSolvent && isFragranceMaterial && concentrateRemainingGrams > 0 && ingredient.quantity === 0 && (
-                                <button
+                                <Button
                                   type="button"
+                                  variant="outline"
+                                  size="sm"
                                   onClick={() => handleFillRemainingConcentrate(index)}
-                                  className="text-[10px] font-mono text-muted-foreground hover:text-foreground bg-muted/50 hover:bg-muted px-1.5 py-0.5 rounded border transition-colors cursor-pointer flex items-center gap-1 whitespace-nowrap"
+                                  className="h-5 text-[10px] font-mono text-muted-foreground hover:text-foreground bg-muted/50 hover:bg-muted px-1.5 py-0.5 rounded border transition-colors cursor-pointer flex items-center gap-1 whitespace-nowrap"
                                   title={`Fill remaining concentrate: ${concentrateRemainingGrams} g`}
                                 >
                                   <span>Fill concentrate:</span>
                                   <span className="font-semibold">{decimalRound(concentrateRemainingGrams, 1)} g</span>
-                                </button>
+                                </Button>
                               )}
                             </div>
                           ) : (
@@ -983,17 +1012,19 @@ export function FormulaWorkspaceClient({ formula, rules, user, activeVersionId }
 
                         {/* Safety Status Badge with Details Click */}
                         <td className="px-4 py-2.5 text-center">
-                          <button
+                          <Button
                             type="button"
+                            variant="ghost"
+                            size="sm"
                             onClick={() => {
                               const finding = complianceFindings.find((f) => f.ingredientId === ingredient.ingredientId && f.severity !== "PASS")
                                 || complianceFindings.find((f) => f.ingredientId === ingredient.ingredientId);
                               if (finding) setSelectedFinding(finding);
                             }}
-                            className="cursor-pointer inline-block"
+                            className="h-auto p-0 hover:bg-transparent cursor-pointer inline-block"
                           >
                             <ComplianceBadge status={complianceStatus} />
-                          </button>
+                          </Button>
                         </td>
 
                         {/* Actions */}
@@ -1118,10 +1149,12 @@ export function FormulaWorkspaceClient({ formula, rules, user, activeVersionId }
               </span>
             </div>
             <div className="flex flex-wrap gap-1.5 p-1 bg-muted/40 rounded-lg border border-border/40">
-              <button
+              <Button
                 type="button"
+                variant={selectedMarketTab === "ALL" ? "secondary" : "ghost"}
+                size="sm"
                 onClick={() => setSelectedMarketTab("ALL")}
-                className={`flex-1 min-w-[75px] inline-flex items-center justify-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium transition-all cursor-pointer ${
+                className={`h-7 flex-1 min-w-[75px] inline-flex items-center justify-center gap-1.5 px-2.5 py-1 text-xs font-medium cursor-pointer ${
                   selectedMarketTab === "ALL"
                     ? "bg-card text-foreground font-semibold shadow-xs border border-border/80"
                     : "text-muted-foreground hover:text-foreground hover:bg-card/50"
@@ -1133,15 +1166,17 @@ export function FormulaWorkspaceClient({ formula, rules, user, activeVersionId }
                 }`}>
                   {complianceFindings.length}
                 </span>
-              </button>
+              </Button>
               {formulaMarkets.map((m) => {
                 const count = complianceFindings.filter((f) => !f.market || f.market === m || f.market === "Global").length;
                 return (
-                  <button
+                  <Button
                     key={m}
                     type="button"
+                    variant={selectedMarketTab === m ? "secondary" : "ghost"}
+                    size="sm"
                     onClick={() => setSelectedMarketTab(m)}
-                    className={`inline-flex items-center justify-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium transition-all cursor-pointer ${
+                    className={`h-7 inline-flex items-center justify-center gap-1.5 px-2.5 py-1 text-xs font-medium cursor-pointer ${
                       selectedMarketTab === m
                         ? "bg-card text-foreground font-semibold shadow-xs border border-border/80"
                         : "text-muted-foreground hover:text-foreground hover:bg-card/50"
@@ -1153,7 +1188,7 @@ export function FormulaWorkspaceClient({ formula, rules, user, activeVersionId }
                     }`}>
                       {count}
                     </span>
-                  </button>
+                  </Button>
                 );
               })}
             </div>
@@ -1196,11 +1231,12 @@ export function FormulaWorkspaceClient({ formula, rules, user, activeVersionId }
               {filteredFindings
                 .filter((f) => f.severity !== "PASS")
                 .map((finding, i) => (
-                  <button
+                  <Button
                     key={i}
                     type="button"
+                    variant="outline"
                     onClick={() => setSelectedFinding(finding)}
-                    className="w-full text-left rounded-lg border p-3 text-xs hover:bg-muted/50 transition-all cursor-pointer space-y-1.5"
+                    className="w-full text-left rounded-lg border p-3 h-auto text-xs hover:bg-muted/50 transition-all cursor-pointer flex flex-col items-stretch space-y-1.5 font-normal whitespace-normal"
                   >
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-1.5">
@@ -1215,7 +1251,7 @@ export function FormulaWorkspaceClient({ formula, rules, user, activeVersionId }
                     <span className="text-[10px] text-primary font-medium inline-block hover:underline">
                       View details & apply safe limit →
                     </span>
-                  </button>
+                  </Button>
                 ))}
 
               {filteredFindings.filter((f) => f.severity !== "PASS").length === 0 && (
@@ -1260,10 +1296,12 @@ export function FormulaWorkspaceClient({ formula, rules, user, activeVersionId }
                     }`}
                   >
                     <div className="flex items-center justify-between">
-                      <button
+                      <Button
                         type="button"
+                        variant="ghost"
+                        size="sm"
                         onClick={() => router.push(`/formulas/${formula.id}?versionId=${version.id}`)}
-                        className="flex items-center gap-1.5 font-medium font-mono text-left cursor-pointer hover:text-primary transition-colors"
+                        className="h-auto p-0 flex items-center gap-1.5 font-medium font-mono text-left cursor-pointer hover:text-primary transition-colors"
                       >
                         <Clock className="h-3 w-3 text-muted-foreground" />
                         <span>v{version.versionNumber}</span>
@@ -1272,40 +1310,46 @@ export function FormulaWorkspaceClient({ formula, rules, user, activeVersionId }
                             Active
                           </span>
                         )}
-                      </button>
+                      </Button>
                       <StatusBadge status={version.status} />
                     </div>
 
                     {/* Action buttons for this specific version */}
                     <div className="flex items-center justify-between mt-2 pt-1.5 border-t border-border/40 text-[11px]">
-                      <button
+                      <Button
                         type="button"
+                        variant="link"
+                        size="sm"
                         onClick={() => router.push(`/formulas/${formula.id}?versionId=${version.id}`)}
-                        className={`hover:underline cursor-pointer ${isCurrent ? "text-primary font-semibold" : "text-muted-foreground"}`}
+                        className={`h-auto p-0 text-[11px] hover:underline cursor-pointer ${isCurrent ? "text-primary font-semibold" : "text-muted-foreground"}`}
                       >
                         {isCurrent ? "Viewing active" : "View ingredients →"}
-                      </button>
+                      </Button>
 
                       <div className="flex items-center gap-1">
                         {canRestoreThis && (
-                          <button
+                          <Button
                             type="button"
+                            variant="ghost"
+                            size="sm"
                             onClick={() => setRevertVersionDialog(version)}
-                            className="px-1.5 py-0.5 rounded text-[10px] text-primary hover:bg-primary/10 transition-colors cursor-pointer flex items-center gap-0.5 font-medium"
+                            className="h-6 px-1.5 py-0.5 rounded text-[10px] text-primary hover:bg-primary/10 transition-colors cursor-pointer flex items-center gap-0.5 font-medium"
                             title={`Restore formulation from v${version.versionNumber}`}
                           >
                             <RotateCcw className="h-2.5 w-2.5" /> Revert to this
-                          </button>
+                          </Button>
                         )}
                         {canDiscardThis && (
-                          <button
+                          <Button
                             type="button"
+                            variant="ghost"
+                            size="sm"
                             onClick={() => setDiscardVersionDialog(version)}
-                            className="px-1.5 py-0.5 rounded text-[10px] text-destructive hover:bg-destructive/10 transition-colors cursor-pointer flex items-center gap-0.5"
+                            className="h-6 px-1.5 py-0.5 rounded text-[10px] text-destructive hover:text-destructive hover:bg-destructive/10 transition-colors cursor-pointer flex items-center gap-0.5"
                             title={`Discard draft v${version.versionNumber}`}
                           >
                             <Trash2 className="h-2.5 w-2.5" /> Discard
-                          </button>
+                          </Button>
                         )}
                       </div>
                     </div>
@@ -1338,19 +1382,22 @@ export function FormulaWorkspaceClient({ formula, rules, user, activeVersionId }
                 className="pl-9 pr-8 h-10 text-sm"
               />
               {searchQuery && (
-                <button
+                <Button
                   type="button"
+                  variant="ghost"
+                  size="icon"
                   onClick={() => handleSearch("")}
-                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground p-0.5 rounded-full"
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground hover:text-foreground p-0.5 rounded-full"
                 >
                   <X className="h-3.5 w-3.5" />
-                </button>
+                </Button>
               )}
             </div>
 
             {canEdit && (
-              <button
+              <Button
                 type="button"
+                variant="outline"
                 onClick={() => {
                   setQuickOilForm({
                     name: searchQuery.trim(),
@@ -1364,7 +1411,7 @@ export function FormulaWorkspaceClient({ formula, rules, user, activeVersionId }
                   });
                   setQuickOilOpen(true);
                 }}
-                className="w-full flex items-center justify-between px-3 py-2 rounded-lg border border-dashed border-primary/30 hover:border-primary hover:bg-primary/5 text-xs text-primary font-medium transition-colors cursor-pointer group"
+                className="w-full flex items-center justify-between px-3 py-2 h-auto rounded-lg border-dashed border-primary/30 hover:border-primary hover:bg-primary/5 text-xs text-primary font-medium transition-colors cursor-pointer group"
               >
                 <span className="flex items-center gap-1.5">
                   <Plus className="h-3.5 w-3.5" />
@@ -1377,7 +1424,7 @@ export function FormulaWorkspaceClient({ formula, rules, user, activeVersionId }
                 <span className="text-[10px] text-muted-foreground group-hover:text-primary transition-colors">
                   Create Material →
                 </span>
-              </button>
+              </Button>
             )}
           </div>
 
@@ -1490,15 +1537,17 @@ export function FormulaWorkspaceClient({ formula, rules, user, activeVersionId }
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <Label htmlFor="quickOilName">Oil / Material Name</Label>
-                <button
+                <Button
                   type="button"
+                  variant="link"
+                  size="sm"
                   onClick={handleQuickAutoFill}
                   disabled={isLookingUpOil || !quickOilForm.name.trim()}
-                  className="text-[11px] text-primary hover:underline flex items-center gap-1 font-medium cursor-pointer disabled:opacity-40"
+                  className="h-auto p-0 text-[11px] text-primary flex items-center gap-1 font-medium cursor-pointer"
                 >
                   <Sparkles className="h-3 w-3" />
                   {isLookingUpOil ? "Searching API..." : "Auto-Fill via API"}
-                </button>
+                </Button>
               </div>
               <Input
                 id="quickOilName"
@@ -1557,9 +1606,11 @@ export function FormulaWorkspaceClient({ formula, rules, user, activeVersionId }
                 />
                 <div className="flex flex-wrap gap-1 pt-0.5">
                   {[100, 50, 10, 1].map((pct) => (
-                    <button
+                    <Button
                       key={pct}
                       type="button"
+                      variant={parseFloat(quickOilForm.dilutionPercentage) === pct ? "default" : "outline"}
+                      size="sm"
                       onClick={() =>
                         setQuickOilForm({
                           ...quickOilForm,
@@ -1567,14 +1618,10 @@ export function FormulaWorkspaceClient({ formula, rules, user, activeVersionId }
                           diluentSolvent: pct < 100 && quickOilForm.diluentSolvent === "None (Pure)" ? "DPG" : quickOilForm.diluentSolvent,
                         })
                       }
-                      className={`px-1.5 py-0.5 text-[9px] rounded border font-mono transition-colors cursor-pointer ${
-                        parseFloat(quickOilForm.dilutionPercentage) === pct
-                          ? "bg-primary text-primary-foreground border-primary font-semibold"
-                          : "bg-muted/60 text-muted-foreground hover:bg-muted"
-                      }`}
+                      className="h-5 px-1.5 py-0 text-[9px] font-mono"
                     >
                       {pct === 100 ? "Pure" : `${pct}%`}
-                    </button>
+                    </Button>
                   ))}
                 </div>
               </div>

@@ -22,6 +22,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
+import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -65,9 +66,10 @@ export function Sidebar({ user }: SidebarProps) {
         {/* Workspace Switcher */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <button
+            <Button
               type="button"
-              className="flex items-center justify-between w-full px-1 py-1 rounded-md hover:bg-neutral-100/80 transition-colors text-left group cursor-pointer"
+              variant="ghost"
+              className="flex items-center justify-between w-full h-auto px-1 py-1 rounded-md hover:bg-neutral-100/80 transition-colors text-left group cursor-pointer font-normal"
             >
               <div className="flex items-center gap-2.5 min-w-0">
                 {/* Globe / Mesh Matrix Avatar Icon */}
@@ -99,7 +101,7 @@ export function Sidebar({ user }: SidebarProps) {
               </div>
 
               <ChevronsUpDown className="h-4 w-4 text-neutral-500 group-hover:text-neutral-800 transition-colors shrink-0 ml-1" />
-            </button>
+            </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="start" className="w-56">
             <DropdownMenuLabel className="text-xs text-muted-foreground font-normal">
@@ -123,10 +125,11 @@ export function Sidebar({ user }: SidebarProps) {
         </DropdownMenu>
 
         {/* Search Input Button */}
-        <button
+        <Button
           type="button"
+          variant="outline"
           onClick={() => window.dispatchEvent(new CustomEvent("open-command-palette"))}
-          className="flex items-center justify-between w-full h-8 px-2.5 rounded-md border border-neutral-200/90 bg-white hover:border-neutral-300 text-neutral-500 hover:text-neutral-800 transition-colors text-xs cursor-pointer group"
+          className="flex items-center justify-between w-full h-8 px-2.5 rounded-md border border-neutral-200/90 bg-white hover:border-neutral-300 text-neutral-500 hover:text-neutral-800 transition-colors text-xs cursor-pointer group font-normal"
         >
           <span className="flex items-center gap-2 text-neutral-500 group-hover:text-neutral-800">
             <Search className="h-3.5 w-3.5 text-neutral-400 group-hover:text-neutral-600" />
@@ -135,7 +138,7 @@ export function Sidebar({ user }: SidebarProps) {
           <kbd className="px-2 py-0.5 text-[11px] font-mono font-medium rounded border border-neutral-200 bg-neutral-50 text-neutral-400 group-hover:text-neutral-600">
             /
           </kbd>
-        </button>
+        </Button>
       </div>
 
       {/* ── 2. Navigation Menu Items ── */}
@@ -222,13 +225,15 @@ export function Sidebar({ user }: SidebarProps) {
           {/* User Settings Dropdown */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <button
+              <Button
                 type="button"
-                className="flex h-7 w-7 items-center justify-center rounded-md text-neutral-500 hover:text-neutral-800 hover:bg-neutral-100 transition-colors cursor-pointer"
+                variant="ghost"
+                size="icon"
+                className="h-7 w-7 text-neutral-500 hover:text-neutral-800 hover:bg-neutral-100 cursor-pointer"
                 title="Account options"
               >
                 <MoreHorizontal className="h-4 w-4" />
-              </button>
+              </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56">
               <DropdownMenuLabel>
@@ -244,13 +249,14 @@ export function Sidebar({ user }: SidebarProps) {
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <form action={logoutAction}>
-                <button
+                <Button
                   type="submit"
-                  className="flex w-full items-center gap-2 px-2 py-1.5 text-xs text-destructive hover:bg-destructive/10 rounded-sm cursor-pointer transition-colors"
+                  variant="ghost"
+                  className="flex w-full justify-start items-center gap-2 px-2 py-1.5 h-auto text-xs text-destructive hover:text-destructive hover:bg-destructive/10 rounded-sm cursor-pointer font-normal"
                 >
                   <LogOut className="h-4 w-4" />
                   Sign Out
-                </button>
+                </Button>
               </form>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -258,14 +264,16 @@ export function Sidebar({ user }: SidebarProps) {
           {/* Notifications Trigger */}
           <DropdownMenu open={notificationsOpen} onOpenChange={setNotificationsOpen}>
             <DropdownMenuTrigger asChild>
-              <button
+              <Button
                 type="button"
-                className="relative flex h-7 w-7 items-center justify-center rounded-md text-neutral-500 hover:text-neutral-800 hover:bg-neutral-100 transition-colors cursor-pointer"
+                variant="ghost"
+                size="icon"
+                className="relative h-7 w-7 text-neutral-500 hover:text-neutral-800 hover:bg-neutral-100 cursor-pointer"
                 title="Notifications"
               >
                 <Bell className="h-4 w-4" />
                 <span className="absolute top-1 right-1 h-2 w-2 rounded-full bg-blue-600" />
-              </button>
+              </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-72">
               <DropdownMenuLabel className="flex items-center justify-between">

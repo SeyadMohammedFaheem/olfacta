@@ -3,7 +3,7 @@
 import { useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Plus, Search, FlaskConical, Trash2, ArrowRight, FileSpreadsheet } from "lucide-react";
+import { Plus, Search, FlaskConical, Trash2, ArrowRight, FileSpreadsheet, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { StatusBadge } from "@/components/ui/status-badge";
@@ -176,12 +176,25 @@ export function FormulasClient({ formulas, canDelete }: { formulas: any[]; canDe
                       {formula.createdBy?.name || "—"}
                     </td>
                     <td className="px-5 py-3 text-right">
-                      <Link
-                        href={`/formulas/${formula.id}`}
-                        className="text-xs font-medium text-primary hover:underline inline-flex items-center gap-1"
-                      >
-                        Open Workspace <ArrowRight className="h-3 w-3" />
-                      </Link>
+                      <div className="flex items-center justify-end gap-2">
+                        {formula.status === "APPROVED" && (
+                          <a
+                            href={`/formulas/${formula.id}/print`}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="text-xs font-semibold text-emerald-700 hover:text-emerald-800 hover:underline inline-flex items-center gap-1 bg-emerald-50 px-2.5 py-1 rounded border border-emerald-200 shadow-2xs"
+                            title="Save Official PDF & Sign-Off Sheet"
+                          >
+                            <FileText className="h-3 w-3 text-emerald-600" /> Save PDF
+                          </a>
+                        )}
+                        <Link
+                          href={`/formulas/${formula.id}`}
+                          className="text-xs font-medium text-primary hover:underline inline-flex items-center gap-1"
+                        >
+                          Workspace <ArrowRight className="h-3 w-3" />
+                        </Link>
+                      </div>
                     </td>
                   </tr>
                 );

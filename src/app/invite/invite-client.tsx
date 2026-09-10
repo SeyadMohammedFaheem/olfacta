@@ -91,22 +91,20 @@ export function InviteClient({ token, invitation }: { token: string; invitation:
   return (
     <div className="flex min-h-screen w-full bg-white select-none">
       {/* ── LEFT HALF: Form Section (50%) ── */}
-      <div className="flex flex-1 flex-col justify-between p-8 sm:p-12 lg:p-16 lg:w-1/2 overflow-y-auto">
-        <div />
-
+      <div className="flex flex-1 flex-col justify-center p-6 sm:p-10 lg:p-14 lg:w-1/2 overflow-y-auto">
         {/* Centered Form */}
-        <div className="w-full max-w-[380px] mx-auto my-auto py-6">
-          <div className="mb-6">
-            <h1 className="text-3xl font-extrabold tracking-tight text-neutral-950">
+        <div className="w-full max-w-[380px] mx-auto py-6">
+          <div className="mb-5">
+            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-neutral-900">
               Join workspace
             </h1>
-            <p className="mt-1 text-sm text-neutral-500 font-normal">
+            <p className="mt-1 text-xs sm:text-sm text-neutral-500 font-normal">
               You were invited by <strong className="text-neutral-900 font-medium">{invitation.inviterName}</strong>
             </p>
           </div>
 
           {/* Invitation Details Summary Card */}
-          <div className="rounded-lg border border-neutral-200 bg-neutral-50/70 p-4 mb-5 space-y-2.5">
+          <div className="rounded-lg border border-neutral-200 bg-neutral-50/70 p-4 mb-5 space-y-2">
             <div className="flex items-center justify-between gap-2">
               <div className="flex items-center gap-2 font-semibold text-neutral-900 text-sm">
                 <Building2 className="h-4 w-4 text-neutral-500" />
@@ -122,15 +120,15 @@ export function InviteClient({ token, invitation }: { token: string; invitation:
           </div>
 
           {/* Form */}
-          <form onSubmit={handleAccept} className="space-y-4">
+          <form onSubmit={handleAccept} className="space-y-3.5">
             {error && (
-              <div className="rounded-md border border-red-500/20 bg-red-50 px-3 py-2 text-xs text-red-600 flex items-center gap-2">
+              <div className="rounded-lg border border-red-500/20 bg-red-50/80 px-3 py-2 text-xs font-medium text-red-600 flex items-center gap-2">
                 <AlertCircle className="h-4 w-4 shrink-0" />
                 <span>{error}</span>
               </div>
             )}
 
-            <div className="space-y-1.5">
+            <div className="space-y-1">
               <Label htmlFor="email" className="text-xs font-medium text-neutral-700">
                 Email address
               </Label>
@@ -139,11 +137,11 @@ export function InviteClient({ token, invitation }: { token: string; invitation:
                 type="email"
                 value={invitation.email}
                 disabled
-                className="h-10 rounded-md border-neutral-200 bg-neutral-100/60 text-sm text-neutral-600 font-mono cursor-not-allowed"
+                className="h-9 rounded-lg border-neutral-200 bg-neutral-100/60 px-3 text-xs sm:text-sm text-neutral-600 font-mono cursor-not-allowed"
               />
             </div>
 
-            <div className="space-y-1.5">
+            <div className="space-y-1">
               <Label htmlFor="name" className="text-xs font-medium text-neutral-700">
                 Your full name
               </Label>
@@ -154,11 +152,11 @@ export function InviteClient({ token, invitation }: { token: string; invitation:
                 placeholder="e.g. Jean Carles"
                 required
                 autoFocus
-                className="h-10 rounded-md border-neutral-200 bg-white text-sm placeholder:text-neutral-400 focus-visible:ring-1 focus-visible:ring-black"
+                className="h-9 rounded-lg border-neutral-200 bg-white px-3 text-xs sm:text-sm placeholder:text-neutral-400 focus-visible:border-neutral-900 focus-visible:ring-1 focus-visible:ring-neutral-900 shadow-2xs"
               />
             </div>
 
-            <div className="space-y-1.5">
+            <div className="space-y-1">
               <Label htmlFor="password" className="text-xs font-medium text-neutral-700">
                 Set password
               </Label>
@@ -168,7 +166,7 @@ export function InviteClient({ token, invitation }: { token: string; invitation:
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="Minimum 6 characters"
-                className="h-10 rounded-md border-neutral-200 bg-white text-sm placeholder:text-neutral-400 focus-visible:ring-1 focus-visible:ring-black font-mono"
+                className="h-9 rounded-lg border-neutral-200 bg-white px-3 text-xs sm:text-sm placeholder:text-neutral-400 focus-visible:border-neutral-900 focus-visible:ring-1 focus-visible:ring-neutral-900 shadow-2xs"
               />
               <p className="text-[11px] text-neutral-400">
                 Leave blank if you already have an account with this email.
@@ -176,7 +174,7 @@ export function InviteClient({ token, invitation }: { token: string; invitation:
             </div>
 
             {password.length > 0 && (
-              <div className="space-y-1.5">
+              <div className="space-y-1">
                 <Label htmlFor="confirmPassword" className="text-xs font-medium text-neutral-700">
                   Confirm password
                 </Label>
@@ -186,14 +184,14 @@ export function InviteClient({ token, invitation }: { token: string; invitation:
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   placeholder="Repeat your password"
-                  className="h-10 rounded-md border-neutral-200 bg-white text-sm placeholder:text-neutral-400 focus-visible:ring-1 focus-visible:ring-black font-mono"
+                  className="h-9 rounded-lg border-neutral-200 bg-white px-3 text-xs sm:text-sm placeholder:text-neutral-400 focus-visible:border-neutral-900 focus-visible:ring-1 focus-visible:ring-neutral-900 shadow-2xs"
                 />
               </div>
             )}
 
             <Button
               type="submit"
-              className="w-full h-11 rounded-md bg-black hover:bg-neutral-800 text-white font-medium text-sm transition-colors cursor-pointer mt-2"
+              className="w-full h-10 rounded-lg bg-neutral-900 hover:bg-black text-white font-medium text-xs sm:text-sm transition-all shadow-xs cursor-pointer mt-1"
               loading={isPending}
             >
               Accept invitation & join
@@ -201,17 +199,12 @@ export function InviteClient({ token, invitation }: { token: string; invitation:
           </form>
 
           {/* Bottom Switch Link */}
-          <p className="mt-6 text-center text-xs text-neutral-500">
+          <p className="mt-5 text-center text-xs text-neutral-500">
             Already have an account?{" "}
-            <Link href="/login" className="font-semibold text-blue-600 hover:underline">
+            <Link href="/login" className="font-semibold text-neutral-900 hover:underline">
               Sign in
             </Link>
           </p>
-        </div>
-
-        {/* Empty placeholder for clean vertical flex spacing */}
-        <div className="text-[11px] text-neutral-400">
-          Olfacta Laboratory Workstation
         </div>
       </div>
 

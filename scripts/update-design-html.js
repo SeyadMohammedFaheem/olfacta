@@ -140,3 +140,32 @@ if (fs.existsSync(materialDetailFile)) {
   fs.writeFileSync(materialDetailFile, matHtml, 'utf8');
   console.log('Successfully updated 15-ingredient-material-detail.html grid layout');
 }
+
+// 4. Update Dashboard Overview screen button: "Create New Formula" to outline styling
+const dashFile = path.join(designDir, '03-dashboard.html');
+if (fs.existsSync(dashFile)) {
+  let dashHtml = fs.readFileSync(dashFile, 'utf8');
+  const oldDashBtn = 'class="inline-flex items-center justify-center gap-2 whitespace-nowrap font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&amp;_svg]:pointer-events-none [&amp;_svg]:size-4 [&amp;_svg]:shrink-0 cursor-pointer bg-primary text-primary-foreground hover:bg-primary/90 h-8 rounded-md px-3 text-xs" href="/formulas/new"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-plus mr-1.5 h-4 w-4"';
+  const newDashBtn = 'class="inline-flex items-center justify-center gap-2 whitespace-nowrap font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&amp;_svg]:pointer-events-none [&amp;_svg]:size-4 [&amp;_svg]:shrink-0 cursor-pointer border border-input bg-background hover:bg-accent hover:text-accent-foreground h-8 rounded-md px-3 text-xs" href="/formulas/new"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-plus mr-1.5 h-3.5 w-3.5"';
+  
+  if (dashHtml.includes(oldDashBtn)) {
+    dashHtml = dashHtml.replace(oldDashBtn, newDashBtn);
+    fs.writeFileSync(dashFile, dashHtml, 'utf8');
+    console.log('Successfully updated 03-dashboard.html button styling to outline');
+  }
+}
+
+// 5. Update all-screens.html master catalog
+const allScreensFile = path.join(designDir, 'all-screens.html');
+if (fs.existsSync(allScreensFile)) {
+  let allHtml = fs.readFileSync(allScreensFile, 'utf8');
+  const oldDashBtn = 'class="inline-flex items-center justify-center gap-2 whitespace-nowrap font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&amp;_svg]:pointer-events-none [&amp;_svg]:size-4 [&amp;_svg]:shrink-0 cursor-pointer bg-primary text-primary-foreground hover:bg-primary/90 h-8 rounded-md px-3 text-xs" href="/formulas/new"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-plus mr-1.5 h-4 w-4"';
+  const newDashBtn = 'class="inline-flex items-center justify-center gap-2 whitespace-nowrap font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&amp;_svg]:pointer-events-none [&amp;_svg]:size-4 [&amp;_svg]:shrink-0 cursor-pointer border border-input bg-background hover:bg-accent hover:text-accent-foreground h-8 rounded-md px-3 text-xs" href="/formulas/new"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-plus mr-1.5 h-3.5 w-3.5"';
+  
+  if (allHtml.includes(oldDashBtn)) {
+    allHtml = allHtml.replace(oldDashBtn, newDashBtn);
+    fs.writeFileSync(allScreensFile, allHtml, 'utf8');
+    console.log('Successfully updated all-screens.html button styling to outline');
+  }
+}
+

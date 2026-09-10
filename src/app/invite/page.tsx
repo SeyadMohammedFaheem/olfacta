@@ -19,7 +19,18 @@ export default async function InvitePage({ searchParams }: InvitePageProps) {
     return (
       <div className="flex min-h-screen w-full bg-white select-none">
         <div className="flex flex-1 flex-col justify-between p-8 sm:p-12 lg:p-16 lg:w-1/2">
-          <div />
+          <div>
+            <Link href="/login" className="inline-flex items-center gap-2">
+              <Image
+                src="/images/logo.png"
+                alt="Olfacta Logo"
+                width={140}
+                height={45}
+                priority
+                className="h-8 w-auto object-contain"
+              />
+            </Link>
+          </div>
           <div className="w-full max-w-[360px] mx-auto my-auto py-6 text-center space-y-4">
             <div className="inline-flex items-center justify-center h-12 w-12 rounded-full bg-red-50 text-red-600 mb-2 mx-auto">
               <AlertCircle className="h-6 w-6" />
@@ -57,7 +68,18 @@ export default async function InvitePage({ searchParams }: InvitePageProps) {
     return (
       <div className="flex min-h-screen w-full bg-white select-none">
         <div className="flex flex-1 flex-col justify-between p-8 sm:p-12 lg:p-16 lg:w-1/2">
-          <div />
+          <div>
+            <Link href="/login" className="inline-flex items-center gap-2">
+              <Image
+                src="/images/logo.png"
+                alt="Olfacta Logo"
+                width={140}
+                height={45}
+                priority
+                className="h-8 w-auto object-contain"
+              />
+            </Link>
+          </div>
           <div className="w-full max-w-[360px] mx-auto my-auto py-6 text-center space-y-4">
             <div className="inline-flex items-center justify-center h-12 w-12 rounded-full bg-red-50 text-red-600 mb-2 mx-auto">
               <AlertCircle className="h-6 w-6" />

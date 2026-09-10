@@ -152,13 +152,15 @@ export function ImportIngredientsModal({ open, onOpenChange }: ImportIngredients
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <Label htmlFor="rawText">Paste table from Sheets / Excel:</Label>
-                <button
+                <Button
                   type="button"
+                  variant="link"
+                  size="sm"
                   onClick={downloadSampleCsv}
-                  className="text-xs text-primary hover:underline inline-flex items-center gap-1 cursor-pointer"
+                  className="h-auto p-0 text-xs text-primary inline-flex items-center gap-1 cursor-pointer"
                 >
                   <Download className="h-3 w-3" /> Download Sample CSV Template
-                </button>
+                </Button>
               </div>
 
               <textarea

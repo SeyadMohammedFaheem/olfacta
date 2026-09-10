@@ -27,10 +27,11 @@ export function TopBar({ user }: TopBarProps) {
     <header className="flex h-14 items-center justify-between border-b bg-background px-4">
       {/* Global Command Palette Trigger */}
       <div className="flex items-center gap-2">
-        <button
+        <Button
           type="button"
+          variant="outline"
           onClick={() => setPaletteOpen(true)}
-          className="flex h-9 w-72 items-center justify-between rounded-md border border-input bg-muted/40 px-3 text-sm text-muted-foreground hover:bg-muted/70 transition-colors cursor-pointer"
+          className="flex h-9 w-72 items-center justify-between bg-muted/40 px-3 text-sm text-muted-foreground hover:bg-muted/70 font-normal hover:text-foreground"
         >
           <span className="flex items-center gap-2">
             <Search className="h-4 w-4" />
@@ -39,7 +40,7 @@ export function TopBar({ user }: TopBarProps) {
           <kbd className="pointer-events-none rounded border bg-background px-2 py-0.5 font-mono text-[11px] font-medium text-muted-foreground">
             /
           </kbd>
-        </button>
+        </Button>
         <CommandPalette open={paletteOpen} onOpenChange={setPaletteOpen} />
       </div>
 

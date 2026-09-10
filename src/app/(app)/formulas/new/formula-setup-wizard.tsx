@@ -511,18 +511,16 @@ export function FormulaSetupWizard() {
                   <Label className="text-xs text-muted-foreground">Standard Presets</Label>
                   <div className="flex flex-wrap gap-2 pt-1">
                     {[5, 10, 15, 20, 25, 30].map((val) => (
-                      <button
+                      <Button
                         key={val}
                         type="button"
+                        variant={concentration === val ? "default" : "outline"}
+                        size="sm"
                         onClick={() => setConcentration(val)}
-                        className={`px-3 py-1 text-xs rounded-md border font-mono transition-colors cursor-pointer ${
-                          concentration === val
-                            ? "bg-primary text-primary-foreground border-primary font-semibold"
-                            : "hover:bg-muted border-border"
-                        }`}
+                        className="h-7 px-3 py-1 text-xs font-mono"
                       >
                         {val}%
-                      </button>
+                      </Button>
                     ))}
                   </div>
                 </div>
@@ -637,13 +635,15 @@ export function FormulaSetupWizard() {
                   <Badge key={m} variant="secondary" className="gap-1.5 pl-2.5 pr-1.5 py-1 text-xs font-medium">
                     <Globe className="h-3 w-3 text-primary" />
                     <span>{m}</span>
-                    <button
+                    <Button
                       type="button"
+                      variant="ghost"
+                      size="icon"
                       onClick={() => toggleMarket(m)}
-                      className="hover:bg-muted rounded-full p-0.5 transition-colors cursor-pointer"
+                      className="h-4 w-4 p-0 hover:bg-muted rounded-full transition-colors cursor-pointer"
                     >
                       <X className="h-3 w-3" />
-                    </button>
+                    </Button>
                   </Badge>
                 ))}
               </div>
@@ -656,11 +656,12 @@ export function FormulaSetupWizard() {
                 {AVAILABLE_MARKETS.map((market) => {
                   const isSelected = selectedMarkets.includes(market.id);
                   return (
-                    <button
+                    <Button
                       key={market.id}
                       type="button"
+                      variant="outline"
                       onClick={() => toggleMarket(market.id)}
-                      className={`flex items-center justify-between p-2.5 rounded-lg border text-left text-xs transition-colors cursor-pointer ${
+                      className={`h-auto flex items-center justify-between p-2.5 rounded-lg border text-left text-xs transition-colors cursor-pointer font-normal whitespace-normal ${
                         isSelected
                           ? "border-primary bg-primary/10 font-semibold text-foreground"
                           : "hover:bg-muted/50 border-border text-muted-foreground"
@@ -672,7 +673,7 @@ export function FormulaSetupWizard() {
                       ) : (
                         <Plus className="h-3.5 w-3.5 text-muted-foreground opacity-50" />
                       )}
-                    </button>
+                    </Button>
                   );
                 })}
               </div>

@@ -101,4 +101,23 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+@media print {
+  @page {
+    margin: 12mm 15mm;
+    size: auto;
+  }
+  
+  body {
+    background: white !important;
+    color: black !important;
+  }
+
+  /* Prevent awkward page cuts in print */
+  .break-inside-avoid, table, tr {
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+  }
+}
+
+
 

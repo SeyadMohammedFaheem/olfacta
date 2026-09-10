@@ -341,15 +341,17 @@ export function IngredientsClient({ ingredients, canCreate }: { ingredients: any
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <Label htmlFor="oilName">Oil / Material Name</Label>
-                <button
+                <Button
                   type="button"
+                  variant="link"
+                  size="sm"
                   onClick={handleAutoFill}
                   disabled={isLookingUp || !oilForm.name.trim()}
-                  className="text-[11px] text-primary hover:underline flex items-center gap-1 font-medium cursor-pointer disabled:opacity-40"
+                  className="h-auto p-0 text-[11px] text-primary flex items-center gap-1 font-medium cursor-pointer"
                 >
                   <Sparkles className="h-3 w-3" />
                   {isLookingUp ? "Searching API..." : "Auto-Fill via API"}
-                </button>
+                </Button>
               </div>
               <Input
                 id="oilName"
@@ -409,9 +411,11 @@ export function IngredientsClient({ ingredients, canCreate }: { ingredients: any
                 />
                 <div className="flex flex-wrap gap-1 pt-0.5">
                   {[100, 50, 10, 1].map((pct) => (
-                    <button
+                    <Button
                       key={pct}
                       type="button"
+                      variant={parseFloat(oilForm.dilutionPercentage) === pct ? "default" : "outline"}
+                      size="sm"
                       onClick={() =>
                         setOilForm({
                           ...oilForm,
@@ -419,14 +423,10 @@ export function IngredientsClient({ ingredients, canCreate }: { ingredients: any
                           diluentSolvent: pct < 100 && oilForm.diluentSolvent === "None (Pure)" ? "DPG" : oilForm.diluentSolvent,
                         })
                       }
-                      className={`px-1.5 py-0.5 text-[9px] rounded border font-mono transition-colors cursor-pointer ${
-                        parseFloat(oilForm.dilutionPercentage) === pct
-                          ? "bg-primary text-primary-foreground border-primary font-semibold"
-                          : "bg-muted/60 text-muted-foreground hover:bg-muted"
-                      }`}
+                      className="h-5 px-1.5 py-0 text-[9px] font-mono"
                     >
                       {pct === 100 ? "Pure" : `${pct}%`}
-                    </button>
+                    </Button>
                   ))}
                 </div>
               </div>

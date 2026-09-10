@@ -90,15 +90,17 @@ export default async function DashboardPage() {
           </p>
         </div>
 
-        <div className="flex items-center gap-2.5 flex-wrap">
+        <div className="flex items-center gap-2">
           <Button variant="outline" size="sm" asChild>
             <Link href="/ingredients">
-              <Droplets className="mr-1.5 h-3.5 w-3.5 text-primary" /> My Oils ({ingredientsCount})
+              <Droplets className="mr-1.5 h-3.5 w-3.5 text-primary" />
+              My Oils ({ingredientsCount})
             </Link>
           </Button>
-          <Button size="sm" asChild>
+          <Button variant="outline" size="sm" asChild>
             <Link href="/formulas/new">
-              <Plus className="mr-1.5 h-4 w-4" /> Create New Formula
+              <Plus className="mr-1.5 h-3.5 w-3.5" />
+              Create New Formula
             </Link>
           </Button>
         </div>
