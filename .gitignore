@@ -46,6 +46,13 @@ next-env.d.ts
 *.sqlite
 *.sqlite3
 
-# design export preview files
+# design export preview files & auxiliary scripts
 /design-html/
+/scripts/
+
+# root temporary & scratch scripts
+/*.js
+!*.config.js
+!*.config.mjs
+
 

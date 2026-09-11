@@ -24,6 +24,38 @@ export async function getFormulas() {
   });
 }
 
+export async function getApprovedFormulas() {
+  const user = await getSessionOrThrow();
+
+  return prisma.formula.findMany({
+    where: {
+      organizationId: user.organizationId,
+      versions: {
+        some: {
+          status: "APPROVED",
+        },
+      },
+    },
+    include: {
+      versions: {
+        where: {
+          status: "APPROVED",
+        },
+        orderBy: { versionNumber: "desc" },
+        select: {
+          id: true,
+          versionNumber: true,
+          status: true,
+          targetWeight: true,
+          weightUnit: true,
+          totalWeight: true,
+        },
+      },
+    },
+    orderBy: { updatedAt: "desc" },
+  });
+}
+
 export async function getFormula(id: string) {
   const user = await getSessionOrThrow();
   
