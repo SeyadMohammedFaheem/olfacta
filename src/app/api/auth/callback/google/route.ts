@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db/prisma";
 import { createSession } from "@/lib/auth/session";
-import { slugify } from "@/lib/utils";
+import { slugify, getBaseUrl } from "@/lib/utils";
 import type { SessionUser } from "@/types";
 import { hash } from "bcryptjs";
 import { randomBytes } from "crypto";
@@ -35,9 +35,7 @@ export async function GET(request: NextRequest) {
   const state = searchParams.get("state");
   const errorParam = searchParams.get("error");
 
-  const host = request.headers.get("x-forwarded-host") || request.headers.get("host") || "localhost:3000";
-  const proto = request.headers.get("x-forwarded-proto") || "http";
-  const baseUrl = process.env.NEXTAUTH_URL || `${proto}://${host}`;
+  const baseUrl = getBaseUrl(request);
 
   if (errorParam) {
     console.error("Google OAuth error from provider:", errorParam);

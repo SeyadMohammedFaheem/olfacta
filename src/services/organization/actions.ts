@@ -9,6 +9,7 @@ import { headers } from "next/headers";
 import { hash } from "bcryptjs";
 import { createInvitationToken, verifyInvitationToken, type InvitationPayload } from "@/lib/auth/invitation";
 import { sendInvitationEmail } from "@/lib/email";
+import { getBaseUrl } from "@/lib/utils";
 
 export async function inviteMember(data: {
   email: string;
@@ -88,9 +89,7 @@ export async function inviteMember(data: {
     });
 
     const headerList = await headers();
-    const host = headerList.get("host") || "localhost:3000";
-    const protocol = headerList.get("x-forwarded-proto") || (host.includes("localhost") ? "http" : "https");
-    const appUrl = process.env.NEXTAUTH_URL || `${protocol}://${host}`;
+    const appUrl = getBaseUrl({ headers: headerList });
     const inviteUrl = `${appUrl}/invite?token=${encodeURIComponent(token)}`;
 
     // Dispatch automated invitation email
